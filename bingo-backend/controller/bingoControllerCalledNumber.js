@@ -1,6 +1,6 @@
-import { NumberGenerator } from '../services/BingoCalledNumber/numberGenerator.js';
+import { NumberGenerator } from '../utils/BingoCalledNumber/numberGenerator.js';
 import { CalledNumberRepository } from '../repository/CalledNumberRepository.js';
-import { BingoNumberCaller } from '../services/BingoCalledNumber/bingoNumberCaller.js';
+import { BingoNumberCaller } from '../utils/BingoCalledNumber/bingoNumberCaller.js';
 
 export class BingoControllerCalledNumber {
     constructor() {
