@@ -10,7 +10,7 @@ const getLocalStorageData = () => {
 
 // Función para guardar datos en localStorage
 const setLocalStorageData = (data) => {
-    localStorage.setItem('bingoCard', JSON.stringify(data));
+    localStorage.setItem('bingoCardStore', JSON.stringify(data));
 };
 
 const useBingoCardStore = create((set) => {
@@ -54,7 +54,7 @@ const useBingoCardStore = create((set) => {
                 const response = await axios.get(`http://localhost:3000/api/cards/${user_id}/${game_id}`);
                 const updatedState = {
                     cards: response.data,
-                    selectedCard: response.data.length > 0 ? response.data[0] : null,
+                    selectedCard: response.data.length > 0 ? response.data[response.data.length - 1] : null,
                     loading: false,
                 };
                 saveToLocalStorage(updatedState);

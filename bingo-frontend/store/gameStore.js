@@ -1,13 +1,13 @@
+// store/gameStore.js
 import { create } from "zustand";
 import axios from 'axios';
 
 const useGameStore = create((set) => ({
-    games: [], //alamcena todos los juegos
+    games: [],
     loading: false,
     error: null,
-    selectedGame: null, // Estado para almacenar el juego seleccionado
+    selectedGame: null,
 
-    // Función para obtener todos los juegos
     fetchGames: async () => {
         set({ loading: true, error: null });
         try {
@@ -18,7 +18,6 @@ const useGameStore = create((set) => ({
         }
     },
 
-    // Función para obtener un juego por su ID
     fetchGameById: async (id) => {
         set({ loading: true, error: null });
         try {
@@ -29,13 +28,23 @@ const useGameStore = create((set) => ({
         }
     },
 
-    // Función para establecer un juego seleccionado
-    setSelectedGame: (game) => set({ selectedGame: game }),
+    setSelectedGame: (game) => {
+        localStorage.setItem('selectedGame', JSON.stringify(game));
+        set({ selectedGame: game });
+    },
 
-    // Función para limpiar el juego seleccionado
-    clearSelectedGame: () => set({ selectedGame: null }),
+    clearSelectedGame: () => {
+        localStorage.removeItem('selectedGame');
+        set({ selectedGame: null });
+    },
 
-    // Función para crear un nuevo juego
+    loadSelectedGame: () => {
+        const savedGame = localStorage.getItem('selectedGame');
+        if (savedGame) {
+            set({ selectedGame: JSON.parse(savedGame) });
+        }
+    },
+
     createGame: async (gameData) => {
         set({ loading: true, error: null });
         try {

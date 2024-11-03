@@ -47,11 +47,11 @@ export function App() {
           />
           <ProtectedRoute 
             Component={GameID}
-            path="game/:id" 
+            path="/game/:id" 
           />
           <ProtectedRoute 
             Component={Playing}
-            path="playing/:id" 
+            path="/playing/:id" 
           />        
         </Router>
       </main>
