@@ -1,5 +1,5 @@
 import { useEffect } from "preact/hooks";
-import useUsersGame from "../../../../../store/usersGameStore";
+import useUsersGame from "../../../../../store/usersGame";
 import useGameStore from "../../../../../store/gameStore";
 
 const GamePlayers = ({ onClose }) => {

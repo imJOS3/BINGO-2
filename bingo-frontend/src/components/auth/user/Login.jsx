@@ -23,11 +23,9 @@ const Login = () => {
             const response = await axios.post('http://localhost:3000/api/login', { email, password });
             login(response.data.token);
             setSuccess('¡Inicio de sesión exitoso!');
-            
-            setTimeout(() => {
-                route('/games');
-                setSuccess(null);
-            }, 1000);
+            route('/games');
+            setSuccess(null);
+
         } catch (err) {
             setError('Credenciales incorrectas');
         }

@@ -1,6 +1,6 @@
 import { route } from "preact-router";
 import useGameStore from "../../../../store/gameStore";
-import useUsersGame from "../../../../store/usersGameStore";
+import useUsersGame from "../../../../store/usersGame";
 import useAuthStore from "../../../../store/authStore";
 
 export default function OneGame() {

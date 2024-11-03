@@ -2,7 +2,7 @@ import { useState } from "preact/hooks";
 import useGameStore from "../../../../../store/gameStore";
 import BingoCard from "../../scenery/cardBingo/BingoCard";
 import TableGameData from "./tableGameData";
-import useUsersGame from "../../../../../store/usersGameStore";
+import useUsersGame from "../../../../../store/usersGame";
 import useAuthStore from "../../../../../store/authStore";
 import GamePlayers from "./gamePlayer";
 import { route } from "preact-router";
