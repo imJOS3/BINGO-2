@@ -1,8 +1,8 @@
-// /src/store/authStore.js
+
 import { create } from 'zustand';
 import { jwtDecode } from 'jwt-decode';
 
-//funcion para decodifcar el token
+// Función para decodificar el token
 const decodeToken = (token) => {
     try {
         return jwtDecode(token);
@@ -15,15 +15,21 @@ const decodeToken = (token) => {
 const useAuthStore = create((set) => ({
     auth: false,
     userInfo: null,
+    
+    // Método para iniciar sesión
     login: (token) => {
         localStorage.setItem('authToken', token);
         const decoded = decodeToken(token);
         set({ auth: true, userInfo: decoded });
     },
+
+    // Método para cerrar sesión
     logout: () => {
         localStorage.removeItem('authToken');
         set({ auth: false, userInfo: null });
     },
+
+    // Método para verificar si está autenticado
     isAuthenticated: () => {
         const token = localStorage.getItem('authToken');
         if (token) {
@@ -33,6 +39,9 @@ const useAuthStore = create((set) => ({
             set({ auth: false, userInfo: null });
         }
     },
+
+    // Nuevo método para actualizar `userInfo`
+    setUserInfo: (newUserInfo) => set({ userInfo: newUserInfo }),
 }));
 
 export default useAuthStore;

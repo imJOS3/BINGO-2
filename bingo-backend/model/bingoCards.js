@@ -11,7 +11,7 @@ const BingoCards = db.define('bingoCards', {
         type: DataTypes.INTEGER,
         allowNull: false,
         references: {
-            model: 'users',       // Debe coincidir con el nombre de tu tabla de usuarios
+            model: 'users',       
             key: 'id'
         }
     },
@@ -19,7 +19,7 @@ const BingoCards = db.define('bingoCards', {
         type: DataTypes.INTEGER,
         allowNull: false,
         references: {
-            model: 'games',       // Debe coincidir con el nombre de tu tabla de juegos
+            model: 'games',       
             key: 'id'
         }
     },
@@ -39,7 +39,13 @@ const BingoCards = db.define('bingoCards', {
     }
 }, {
     tableName: 'bingo_cards',
-    timestamps: false
+    timestamps: false,
+    indexes: [
+        {
+            unique: true,
+            fields: ['user_id', 'game_id'] //combinación única
+        }
+    ]
 });
 
 export default BingoCards;

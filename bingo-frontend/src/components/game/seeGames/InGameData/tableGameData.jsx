@@ -2,14 +2,16 @@ import useGameStore from "../../../../../store/gameStore";
 
 export default function TableGameData() {
 
-    const {selectedGame}= useGameStore()
+    const { selectedGame } = useGameStore();
+    if (!selectedGame) {
+        return <p>Cargando detalles del juego...</p>;
+    }
 
-    return(
+    return (
         <>
-        <h2 className="text-3xl font-bold text-center">Detalles del juego</h2>
-        <table className="table-auto bg-white shadow-lg rounded-lg overflow-hidden">
+            <h2 className="text-3xl font-bold text-center">Detalles del juego</h2>
+            <table className="table-auto bg-white shadow-lg rounded-lg overflow-hidden">
                 <tbody>
-                    
                     <tr>
                         <td className="p-4 font-semibold">ID del Juego</td>
                         <td className="p-4">{selectedGame.id}</td>
@@ -33,7 +35,5 @@ export default function TableGameData() {
                 </tbody>
             </table>
         </>
-        
     );
-
 }

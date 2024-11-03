@@ -47,3 +47,45 @@ export const getBingoCardById = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+//funcion que actuliza el bingo card por el id
+export const updateBingoCardById = async (req, res) => {
+    const { id } = req.params;
+
+
+    try {
+        // Verifica si la carta de bingo existe
+        const card = await BingoCards.findByPk(id);
+        if (!card) {
+            return res.status(404).json({ message: 'Bingo card not found' });
+        }
+
+        // Actualiza solo los números de la carta
+        card.numbers = generateBingoCard();
+        await card.save();
+
+        res.status(200).json({ message: 'Bingo card updated successfully', card });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+//funcion que actuliza el bingo card por user_id, game_id
+export const updateBingoCardByUserAndGame = async (req, res) => {
+    const { user_id, game_id } = req.params;
+
+
+    try {
+        // Encuentra la carta de bingo con user_id y game_id
+        const card = await BingoCards.findOne({ where: { user_id, game_id } });
+        if (!card) {
+            return res.status(404).json({ message: 'Bingo card not found for this user and game' });
+        }
+
+        // Actualiza solo los números de la carta
+        card.numbers = generateBingoCard();
+        await card.save();
+
+        res.status(200).json({ message: 'Bingo card updated successfully', card });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};

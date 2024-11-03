@@ -4,24 +4,53 @@ import useAuthStore from '../../../../../store/authStore';
 import useGameStore from '../../../../../store/gameStore';
 
 export default function BingoCard() {
-    const { selectedGame } = useGameStore();
-    const { userInfo } = useAuthStore();
+    const { selectedGame, setSelectedGame } = useGameStore();
+    const { userInfo, setUserInfo } = useAuthStore();
     const { generateAndSaveCard, selectedCard, fetchCardsByUserAndGame } = useBingoCardStore();
 
-    const handleGenerateCard = async () => {
-        await generateAndSaveCard(userInfo.id, selectedGame.id);
-        await fetchCardsByUserAndGame(userInfo.id, selectedGame.id);
+    // Recupera los datos de localStorage al cargar el componente
+    useEffect(() => {
+        const savedGame = localStorage.getItem('selectedGame');
+        const savedUser = localStorage.getItem('userInfo');
 
-        const cards = useBingoCardStore.getState().cards;
-        if (cards.length > 0) {
-            const lastCard = cards[cards.length - 1];
-            useBingoCardStore.setState({ selectedCard: lastCard });
+        if (savedGame) {
+            setSelectedGame(JSON.parse(savedGame));
+        }
+        if (savedUser) {
+            setUserInfo(JSON.parse(savedUser));
+        }
+    }, []);
+
+    // Guarda los datos en localStorage cuando cambian
+    useEffect(() => {
+        if (selectedGame) {
+            localStorage.setItem('selectedGame', JSON.stringify(selectedGame));
+        }
+        if (userInfo) {
+            localStorage.setItem('userInfo', JSON.stringify(userInfo));
+        }
+    }, [selectedGame, userInfo]);
+
+    const handleGenerateCard = async () => {
+        if (userInfo && selectedGame) {
+            console.log("Datos de la solicitud:", {
+                userId: userInfo.id,
+                gameId: selectedGame.id,
+            });
+            try {
+                await generateAndSaveCard(userInfo.id, selectedGame.id);
+                await fetchCardsByUserAndGame(userInfo.id, selectedGame.id);
+            } catch (error) {
+                console.error("Error al generar la tarjeta:", error);
+            }
         }
     };
-
     useEffect(() => {
-        handleGenerateCard();
-    }, []);
+        if (userInfo && selectedGame) {
+            generateAndSaveCard(userInfo.id, selectedGame.id);
+            fetchCardsByUserAndGame(userInfo.id, selectedGame.id);
+        }
+    }, [userInfo, selectedGame]);
 
     return (
         <div className="relative flex flex-col items-center gap-4 p-4">

@@ -13,7 +13,7 @@ export default function GameData() {
     const { leaveGame, fetchPlayers } = useUsersGame();
     const [showPlayers, setShowPlayers] = useState(false);
 
-    if (!selectedGame) return <p>Juego no existe o hubo un error</p>;
+
 
     const handleLeaveGame = async () => {
         try {
