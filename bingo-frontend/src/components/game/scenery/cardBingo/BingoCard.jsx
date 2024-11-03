@@ -26,19 +26,22 @@ export default function BingoCard() {
         if (selectedGame) {
             localStorage.setItem('selectedGame', JSON.stringify(selectedGame));
         }
-        if (userInfo) {
+        if (!userInfo) {
             localStorage.setItem('userInfo', JSON.stringify(userInfo));
         }
     }, [selectedGame, userInfo]);
 
     // Al cargar el componente, verifica si hay una carta existente o crea una nueva
     useEffect(() => {
+        
         const loadCard = async () => {
+            
             if (userInfo && selectedGame) {
                 // Intenta obtener las cartas del usuario y el juego
                 await fetchCardsByUserAndGame(userInfo.id, selectedGame.id);
-                // Si no hay carta seleccionada, genera una nueva
-                if (!selectedCard) {
+                const updatedSelectedCard = useBingoCardStore.getState().selectedCard;
+                
+                if (!updatedSelectedCard) {
                     await generateAndSaveCard(userInfo.id, selectedGame.id);
                 }
             }

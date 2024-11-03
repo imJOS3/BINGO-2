@@ -1,13 +1,16 @@
 import useBingoCardStore from '../../../../../store/bingoCard';
+import { useEffect } from 'react';
 
 export default function BingoCardPlaying() {
+    const { selectedCard, loading } = useBingoCardStore();
 
-    const { selectedCard } = useBingoCardStore();
-
-
+    // Muestra un mensaje o un componente de carga mientras selectedCard se está cargando
     return (
         <div className="ml-10 flex flex-col items-center gap-4 p-3 overflow-hidden">
-            {selectedCard && (
+            {loading && (
+                <div className="text-xl text-gray-600">Cargando carta...</div>
+            )}
+            {!loading && selectedCard && (
                 <div className="grid grid-cols-5 gap-8 p-6 bg-gray-100 rounded-lg shadow-md">
                     {['B', 'I', 'N', 'G', 'O'].map((letter) => (
                         <div key={letter} className="flex flex-col gap-4 items-center">
@@ -30,6 +33,9 @@ export default function BingoCardPlaying() {
                         </div>
                     ))}
                 </div>
+            )}
+            {!loading && !selectedCard && (
+                <div className="text-xl text-gray-600">No hay cartas disponibles.</div>
             )}
         </div>
     );
