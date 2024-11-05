@@ -1,6 +1,6 @@
 import { Link } from 'preact-router';
 
-const NavBar = ({ isAuthenticated, onLogout }) => {
+const NavBar = ({ isAuthenticated = false, onLogout = () => {} }) => {
     return (
         <nav className="bg-gray-800 p-4">
             <div className="container mx-auto flex justify-between items-center">
@@ -20,10 +20,7 @@ const NavBar = ({ isAuthenticated, onLogout }) => {
                             </button>
                         </>
                     ) : (
-                        <>
-                            <Link href="/register" className="text-white hover:text-gray-300">Registrar</Link>
-                            <Link href="/login" className="text-white hover:text-gray-300">Login</Link>
-                        </>
+                        <Link href="/login" className="text-white hover:text-gray-300">Iniciar Sesión</Link>
                     )}
                 </div>
             </div>

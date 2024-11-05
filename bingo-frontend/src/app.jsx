@@ -3,8 +3,8 @@ import { Router, route } from "preact-router";
 import { useEffect } from "preact/hooks";
 import useAuthStore from "../store/authStore"; 
 import NavBar from "./components/navBar/NavBar";
-import Register from "./components/auth/user/Register";
-import Login from "./components/auth/user/Login";
+import Register from "../routes/regiter/register";
+
 import Home from "../routes/home";
 import game from "../routes/game/game";
 import { ProtectedRoute } from "../utils/ProtectedRoute";
@@ -31,12 +31,11 @@ export function App() {
 
   return (
     <div className="h-screen overflow-x-hidden bg-gradient-to-r from-blue-400 to-teal-400 flex flex-col"> {/* Asegura que el contenedor principal ocupe la pantalla completa */}
-      <NavBar isAuthenticated={auth} onLogout={handleLogout} />
+      {/* <NavBar isAuthenticated={auth} onLogout={handleLogout} /> */}
       <main className="flex-1  mx-auto "> 
         <Router>
           <Home path="/" />
-          <Register path="/register" />
-          <Login path="/login" onLogin={handleLogin} />
+          <Register path="/login" onLogin={handleLogin} />
           <ProtectedRoute
             Component={game}
             path="/games"
