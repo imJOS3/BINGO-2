@@ -1,4 +1,4 @@
-import BingoGame from "../../src/components/homeBingoGame";
+import BingoGame from "../../components/homeBingoGame";
 
 export default function game({userInfo}){
 

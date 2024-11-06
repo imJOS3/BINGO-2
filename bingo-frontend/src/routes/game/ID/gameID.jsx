@@ -1,4 +1,4 @@
-import GameData from "../../../src/components/game/seeGames/InGameData/GameData"
+import GameData from "../../../components/game/seeGames/InGameData/GameData"
 
 export default function GameID(){
     return(

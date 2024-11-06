@@ -3,14 +3,13 @@ import { Router, route } from "preact-router";
 import { useEffect } from "preact/hooks";
 import useAuthStore from "../store/authStore"; 
 import NavBar from "./components/navBar/NavBar";
-import Register from "../routes/regiter/register";
-
-import Home from "../routes/home";
-import game from "../routes/game/game";
+import Register from "./routes/regiter/register";
+import Home from "./routes/home";
+import game from "./routes/game/game";
 import { ProtectedRoute } from "../utils/ProtectedRoute";
 import TableGames from "./components/game/seeGames/tableGame";
-import GameID from "../routes/game/ID/gameID";
-import Playing from "../routes/playing/playing";
+import GameID from "./routes/game/ID/gameID";
+import Playing from "./routes/playing/playing";
 
 export function App() {
   const { auth, login, logout, isAuthenticated } = useAuthStore(); 

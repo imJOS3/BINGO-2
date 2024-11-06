@@ -2,3 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
+.clock-container {
+    font-family: 'Orbitron', sans-serif;
+    letter-spacing: 0.1em;
+  }
+  
+  .digit {
+    position: relative;
+    color: #ff3b3f; /* Color LED rojo */
+    text-shadow: 
+      0 0 5px rgba(255, 59, 63, 0.6), /* Brillo alrededor */
+      0 0 10px rgba(255, 59, 63, 0.4), /* Más intensidad */
+      0 0 20px rgba(255, 59, 63, 0.2); /* Suavizado final */
+  }
+  @font-face {
+    font-family: 'DS-Digital';
+    src: url('./assets/fonts/opc1/digital-7m.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+  }

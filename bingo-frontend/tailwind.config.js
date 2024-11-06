@@ -1,11 +1,14 @@
-/** @type {import('tailwindcss').Config} */
+// tailwind.config.js
 module.exports = {
-  content: [
-    './index.html',
-    './src/**/*.{js,jsx,ts,tsx}',
-  ],
+  content: ["./src/**/*.{js,jsx,ts,tsx}", "./index.html"],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        digital: ['"DS-Digital"', 'sans-serif'], // Nombre de la fuente personalizada
+      },
+    },
   },
-  plugins: [],
-}
+  plugins: [
+    require("tailwindcss-animated"), // Asegúrate de que esta línea esté aquí
+  ],
+};
