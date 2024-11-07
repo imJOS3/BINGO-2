@@ -1,4 +1,4 @@
-import BingoGame from "../../components/homeBingoGame";
+import BingoGame from "../../components/game/homeBingoGame";
 
 export default function game({userInfo}){
 

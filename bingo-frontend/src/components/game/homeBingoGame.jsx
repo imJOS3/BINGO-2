@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'preact/hooks';
 import axios from 'axios';
-import imgInicio from "../assets/imgs/imgInicio.png";
-import { ProtectedRoute } from '../../utils/ProtectedRoute';
-import TableGames from './game/seeGames/tableGame';
+import imgInicio from "../../assets/imgs/imgInicio.png";
+
 import { route } from 'preact-router';
 
 export default function BingoGame () {

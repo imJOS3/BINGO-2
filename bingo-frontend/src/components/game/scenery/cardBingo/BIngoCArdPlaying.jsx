@@ -57,7 +57,7 @@ export default function BingoCardPlaying() {
                   >
                     {isSelected ? (
                       <div className="absolute w-full h-full flex items-center justify-center transition-all duration-300 ease-in-out">
-                        <div className="w-12 h-12 rounded-full bg-red-500 animate-"></div> {/* Círculo rojo con animación */}
+                        <div className="w-12 h-12 rounded-full bg-red-500 "></div> {/* Círculo rojo con animación */}
                       </div>
                     ) : (
                       numbers[rowIndex] || ""
