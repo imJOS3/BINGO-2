@@ -4,6 +4,8 @@ import {createBingoCard, getBingoCardsByUserAndGame, getBingoCardById, updateBin
 import { createGame, getAllGames, getGameById} from '../controller/bingoGameController.js';
 import { getPlayersByGameId, leaveGame, joinGame } from '../controller/bingoUsersGameController.js';
 import { LoginUser, RegisterUser } from '../controller/bingoUserController.js';
+import { BingoControllerCalledNumber } from '../controller/bingoControllerCalledNumber.js';
+
 
 const router = express.Router();
 
@@ -24,6 +26,8 @@ router.post('/game/:game_id/join', joinGame);   // Ruta para unirse al juego
 router.post('/game/:game_id/leave', leaveGame); // Ruta para salir del juego
 router.get('/game/:id/players', getPlayersByGameId); //Ruta para obtener todos los jugadores de la partida 
 
+//lamar numeros en una partida
+router.post('/called-number/:game_id', BingoControllerCalledNumber)
 
 //usarios rutas
 router.post('/login', LoginUser);
