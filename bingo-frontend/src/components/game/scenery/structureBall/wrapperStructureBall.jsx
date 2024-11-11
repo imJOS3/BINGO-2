@@ -56,7 +56,7 @@ export default function WrapperStructureBall() {
     };
  
     // Cada vez que haya 5 bolas, eliminar la última con animación
-    useEffect(() => {
+       useEffect(() => {
         if (balls.length === maxBalls) {
             handleRemoveBall();
         }

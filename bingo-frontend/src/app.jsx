@@ -1,7 +1,6 @@
-// app.jsx
 import { Router, route } from "preact-router";
-import { useEffect } from "preact/hooks";
-import useAuthStore from "../store/authStore"; 
+import { useEffect, useState } from "preact/hooks";
+import useAuthStore from "../store/authStore";
 import NavBar from "./components/navBar/NavBar";
 import Register from "./routes/regiter/register";
 import Home from "./routes/home";
@@ -12,11 +11,12 @@ import GameID from "./routes/game/ID/gameID";
 import Playing from "./routes/playing/playing";
 
 export function App() {
-  const { auth, login, logout, isAuthenticated } = useAuthStore(); 
+  const { auth, login, logout, isAuthenticated } = useAuthStore();
+  const [showNavBar, setShowNavBar] = useState(true);
 
   useEffect(() => {
-    isAuthenticated(); // Verifica si el usuario está autenticado al cargar
-  }, []); 
+    isAuthenticated();
+  }, []);
 
   const handleLogin = (token) => {
     login(token);
@@ -24,33 +24,27 @@ export function App() {
   };
 
   const handleLogout = () => {
-    logout(); 
+    logout();
     route("/login");
   };
 
+  const handleRouteChange = (e) => {
+    const currentPath = e.url;
+    // Oculta el NavBar solo en la ruta `/playing/:id`
+    setShowNavBar(!currentPath.startsWith("/playing/"));
+  };
+
   return (
-    <div className="h-screen overflow-x-hidden bg-gradient-to-r from-blue-400 to-teal-400 flex flex-col"> {/* Asegura que el contenedor principal ocupe la pantalla completa */}
-      {/* <NavBar isAuthenticated={auth} onLogout={handleLogout} /> */}
-      <main className="flex-1  mx-auto "> 
-        <Router>
+    <div className="h-screen overflow-x-hidden bg-gradient-to-r from-blue-400 to-teal-400 flex flex-col">
+      {showNavBar && <NavBar isAuthenticated={auth} onLogout={handleLogout} />}
+      <main className="flex-1 mx-auto">
+        <Router onChange={handleRouteChange}>
           <Home path="/" />
           <Register path="/login" onLogin={handleLogin} />
-          <ProtectedRoute
-            Component={game}
-            path="/games"
-          />
-          <ProtectedRoute
-              Component={TableGames}
-              path="/game"
-          />
-          <ProtectedRoute 
-            Component={GameID}
-            path="/game/:id" 
-          />
-          <ProtectedRoute 
-            Component={Playing}
-            path="/playing/:id" 
-          />        
+          <ProtectedRoute Component={game} path="/games" />
+          <ProtectedRoute Component={TableGames} path="/game" />
+          <ProtectedRoute Component={GameID} path="/game/:id" />
+          <ProtectedRoute Component={Playing} path="/playing/:id" />
         </Router>
       </main>
     </div>

@@ -8,7 +8,8 @@ import GamePlayers from "./gamePlayer";
 import { route } from "preact-router";
 
 export default function GameData() {
-  const { selectedGame, clearSelectedGame } = useGameStore();
+  const { selectedGame, clearSelectedGame,  } = useGameStore();
+  console.log(selectedGame.id)
   const { userInfo } = useAuthStore();
   const { leaveGame, fetchPlayers } = useUsersGame();
   const [showPlayers, setShowPlayers] = useState(false);
@@ -33,7 +34,7 @@ export default function GameData() {
   };
 
   const handleStartGame = () => {
-    if (selectedGame && selectedGame.id) {
+    if (selectedGame.id) {
       console.log("Iniciando juego con ID:", selectedGame.id);
       route(`/playing/${selectedGame.id}`);
     } else {

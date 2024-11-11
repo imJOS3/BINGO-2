@@ -2,11 +2,13 @@ import { route } from "preact-router";
 import useGameStore from "../../../../store/gameStore";
 import useUsersGame from "../../../../store/usersGame";
 import useAuthStore from "../../../../store/authStore";
+import useBingoCardStore from "../../../../store/bingoCardStore"; // Importa el store de cartas de bingo
 
 export default function OneGame() {
   const { selectedGame, clearSelectedGame } = useGameStore();
   const { joinGame } = useUsersGame(); // Obtiene la función joinGame del store
   const { userInfo } = useAuthStore();
+  const { setSelectedCard } = useBingoCardStore(); // Función para actualizar la carta seleccionada
 
   // Solo muestra el modal si selectedGame no es nulo
   if (!selectedGame) return null;
@@ -14,6 +16,7 @@ export default function OneGame() {
   const handleGame = async () => {
     try {
       await joinGame(selectedGame.id, userInfo.id);
+      setSelectedCard(null); // Limpia la carta seleccionada antes de unirse a un nuevo juego
       route(`game/${selectedGame.id}`); // Redirige a la página del juego después de unirse
     } catch (error) {
       console.log(error);

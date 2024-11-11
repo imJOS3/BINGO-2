@@ -89,3 +89,41 @@ export const updateBingoCardByUserAndGame = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+// Función para eliminar una carta de bingo por ID
+export const deleteBingoCardById = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        // Encuentra la carta de bingo por su ID
+        const card = await BingoCards.findByPk(id);
+        if (!card) {
+            return res.status(404).json({ message: 'Bingo card not found' });
+        }
+
+        // Elimina la carta de bingo
+        await card.destroy();
+
+        res.status(200).json({ message: 'Bingo card deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+// Función para eliminar una carta de bingo por user_id y game_id
+export const deleteBingoCardByUserAndGame = async (req, res) => {
+    const { user_id, game_id } = req.params;
+
+    try {
+        // Encuentra la carta de bingo con user_id y game_id
+        const card = await BingoCards.findOne({ where: { user_id, game_id } });
+        if (!card) {
+            return res.status(404).json({ message: 'Bingo card not found for this user and game' });
+        }
+
+        // Elimina la carta de bingo
+        await card.destroy();
+
+        res.status(200).json({ message: 'Bingo card deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};

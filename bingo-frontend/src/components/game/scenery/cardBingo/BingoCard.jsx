@@ -1,11 +1,11 @@
-import { useEffect } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
 import useBingoCardStore from "../../../../../store/bingoCardStore";
 import useAuthStore from "../../../../../store/authStore";
 import useGameStore from "../../../../../store/gameStore";
 
 export default function BingoCard() {
-  const { loadUserInfo, userInfo } = useAuthStore();
-  const { loadSelectedGame, selectedGame, setSelectedGame } = useGameStore();
+  const { userInfo } = useAuthStore();
+  const { selectedGame, fetchGameById } = useGameStore();
   const {
     generateAndSaveCard,
     selectedCard,
@@ -13,36 +13,42 @@ export default function BingoCard() {
     updateCardByUserAndGame,
   } = useBingoCardStore();
 
+  const [isCardLoaded, setIsCardLoaded] = useState(false);
+
   // Carga los datos del store al montar el componente
   useEffect(() => {
-    loadUserInfo();
-    loadSelectedGame();
-  }, []);
+    if (userInfo && !selectedGame) {
+      // Se obtiene el juego seleccionado solo si no está cargado
+      fetchGameById(userInfo.selectedGameId); 
+    }
+  }, [userInfo, selectedGame, fetchGameById]);
 
   // Al cargar el componente, verifica si hay una carta existente o crea una nueva
   useEffect(() => {
     const loadCard = async () => {
-      if (userInfo && selectedGame) {
+      if (userInfo && selectedGame && !isCardLoaded) {
         await fetchCardsByUserAndGame(userInfo.id, selectedGame.id);
         const updatedSelectedCard = useBingoCardStore.getState().selectedCard;
         if (!updatedSelectedCard) {
           await generateAndSaveCard(userInfo.id, selectedGame.id);
         }
+        setIsCardLoaded(true);
       }
     };
     loadCard();
-  }, [userInfo, selectedGame]);
+  }, [userInfo, selectedGame, isCardLoaded]);
 
   // Manejador para actualizar la carta de bingo
   const handleUpdateCard = async () => {
+
+    console.log(selectedCard)
+
     if (userInfo && selectedGame && selectedCard) {
-      const updatedNumbers = {
-        /* lógica para actualizar números */
-      };
+
       await updateCardByUserAndGame(
         userInfo.id,
         selectedGame.id,
-        updatedNumbers
+        
       );
     }
   };
