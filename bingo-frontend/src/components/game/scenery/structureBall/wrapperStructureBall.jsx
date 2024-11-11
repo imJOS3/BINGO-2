@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'preact/hooks';
-import { useCalledNumbersStore } from '../../../../../store/useCalledNumberStore';
+import useCalledNumbersStore from "../../../../../store/useCalledNumberStore"
 import Ball from './ball';
 import Portal from './portal';
 import TubeBall from './tubeBall';

@@ -4,7 +4,7 @@ import { persist } from 'zustand/middleware';
 
 const API_URL = 'http://localhost:3000/api';
 
-export const useCalledNumbersStore = create(
+ const useCalledNumbersStore = create(
   persist(
     (set) => ({
         calledNumbers: [],
@@ -31,6 +31,7 @@ export const useCalledNumbersStore = create(
     }
   )
 );
+export default useCalledNumbersStore;
 
 const getBingoLetter = (number) => {
     if (number >= 1 && number <= 15) return 'B';

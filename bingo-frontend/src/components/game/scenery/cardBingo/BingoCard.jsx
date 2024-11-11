@@ -3,6 +3,7 @@ import useBingoCardStore from "../../../../../store/bingoCardStore";
 import useAuthStore from "../../../../../store/authStore";
 import useGameStore from "../../../../../store/gameStore";
 
+
 export default function BingoCard() {
   const { userInfo } = useAuthStore();
   const { selectedGame, fetchGameById } = useGameStore();
@@ -15,14 +16,7 @@ export default function BingoCard() {
 
   const [isCardLoaded, setIsCardLoaded] = useState(false);
 
-  // Carga los datos del store al montar el componente
-  useEffect(() => {
-    if (userInfo && !selectedGame) {
-      // Se obtiene el juego seleccionado solo si no está cargado
-      fetchGameById(userInfo.selectedGameId); 
-    }
-  }, [userInfo, selectedGame, fetchGameById]);
-
+ 
   // Al cargar el componente, verifica si hay una carta existente o crea una nueva
   useEffect(() => {
     const loadCard = async () => {

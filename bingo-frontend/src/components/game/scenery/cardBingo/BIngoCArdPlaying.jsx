@@ -1,13 +1,31 @@
 import { useState, useEffect } from "preact/hooks";
 import useBingoCardStore from "../../../../../store/bingoCardStore";
-import { useCalledNumbersStore } from "../../../../../store/useCalledNumberStore";
+import useCalledNumbersStore from "../../../../../store/useCalledNumberStore"
+import useAuthStore from "../../../../../store/authStore";
+import useGameStore from "../../../../../store/gameStore";
+
+
 
 export default function BingoCardPlaying() {
   const { selectedCard, loading } = useBingoCardStore();
+  const {userInfo} =useAuthStore();
+  const {selectedGame} = useGameStore();
   const { calledNumbers } = useCalledNumbersStore();
   const [selectedNumbers, setSelectedNumbers] = useState({});
   const [animatedNumbers, setAnimatedNumbers] = useState({});
   const [freeSelected, setFreeSelected] = useState(false);
+
+  
+    // Al cargar el componente, verifica si hay una carta existente o crea una nueva
+    useEffect(() => {
+      const loadCard = async () => {
+        if (!selectedGame) {
+          await fetchCardsByUserAndGame(userInfo.id, selectedGame.id);
+   
+        }
+      };
+      loadCard();
+    }, [userInfo, selectedGame]);
 
   const handleNumberClick = (letter, index) => {
     const number = selectedCard.numbers[letter][index];
