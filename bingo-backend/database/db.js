@@ -1,6 +1,6 @@
 import { Sequelize } from 'sequelize';
 
-const db = new Sequelize('bingo_online', 'root', 'tuclave', {
+const db = new Sequelize('bingo_online_oficial', 'root', '', {
     host: 'localhost', 
     port: 3306, 
     dialect: 'mysql',

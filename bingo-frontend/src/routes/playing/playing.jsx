@@ -6,6 +6,7 @@ import GameMode from "../../components/game/scenery/gameData/gameMode";
 import WrapperStructureBall from "../../components/game/scenery/structureBall/wrapperStructureBall";
 import SettingIcon from '../../assets/imgs/Setting.svg';
 import WrapperSetting from '../../components/game/scenery/setting/wrapperSetting';
+import Chat from '../../components/chat/chat';
 
 export default function Playing() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -47,6 +48,8 @@ export default function Playing() {
         </div>
         <BingoCardPlaying />
       </div>
+      <h1>Chat en Tiempo Real</h1>
+      <Chat />
 
       <div className="flex flex-col h-full mr-12">
         <WrapperStructureBall />
