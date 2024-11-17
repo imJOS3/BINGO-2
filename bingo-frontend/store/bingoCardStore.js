@@ -1,6 +1,7 @@
-
 import { create } from 'zustand';
 import axios from 'axios';
+
+const apiUrl = import.meta.env.VITE_API_URL; // Usar la variable de entorno para la URL base
 
 // Función para obtener datos de localStorage
 const getLocalStorageData = () => {
@@ -32,7 +33,7 @@ const useBingoCardStore = create((set) => {
         generateAndSaveCard: async (user_id, game_id) => {
             set({ loading: true, error: null });
             try {
-                const response = await axios.post('http://localhost:3000/api/generate-card', { user_id, game_id });
+                const response = await axios.post(`${apiUrl}/api/generate-card`, { user_id, game_id });
                 set((state) => {
                     const updatedState = {
                         cards: [...state.cards, response.data],
@@ -51,7 +52,7 @@ const useBingoCardStore = create((set) => {
         fetchCardsByUserAndGame: async (user_id, game_id) => {
             set({ loading: true, error: null });
             try {
-                const response = await axios.get(`http://localhost:3000/api/cards/${user_id}/${game_id}`);
+                const response = await axios.get(`${apiUrl}/api/cards/${user_id}/${game_id}`);
                 const updatedState = {
                     cards: response.data,
                     selectedCard: response.data.length > 0 ? response.data[response.data.length - 1] : null,
@@ -84,7 +85,7 @@ const useBingoCardStore = create((set) => {
         updateCardById: async (id, numbers) => {
             set({ loading: true, error: null });
             try {
-                const response = await axios.put(`http://localhost:3000/api/bingo-cards/${id}`, { numbers });
+                const response = await axios.put(`${apiUrl}/api/bingo-cards/${id}`, { numbers });
                 set((state) => {
                     const updatedState = {
                         cards: state.cards.map(card => card.id === id ? response.data.card : card),
@@ -103,7 +104,7 @@ const useBingoCardStore = create((set) => {
         updateCardByUserAndGame: async (user_id, game_id, numbers) => {
             set({ loading: true, error: null });
             try {
-                const response = await axios.put(`http://localhost:3000/api/bingo-cards/${user_id}/${game_id}`, { numbers });
+                const response = await axios.put(`${apiUrl}/api/bingo-cards/${user_id}/${game_id}`, { numbers });
                 set((state) => {
                     const updatedState = {
                         cards: state.cards.map(card => 

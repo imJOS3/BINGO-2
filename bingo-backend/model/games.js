@@ -1,5 +1,6 @@
 import { DataTypes } from 'sequelize';
 import db from '../database/db.js';
+import GameMode from './GameMode.js';
 
 const Game = db.define('Game', {
     id: {
@@ -20,6 +21,16 @@ const Game = db.define('Game', {
         type: DataTypes.INTEGER,
         allowNull: false,
     },
+
+    creator_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,  
+    },
+    game_mode_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true,  
+    },
+    
     created_at: {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW,
@@ -32,6 +43,8 @@ const Game = db.define('Game', {
     tableName: 'games',
     timestamps: false,
 });
+
+Game.belongsTo(GameMode, { foreignKey: 'game_mode_id' });
 
 // Exporta el modelo
 export default Game;

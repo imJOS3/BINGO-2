@@ -1,32 +1,30 @@
 import { useState } from 'preact/hooks';
 import { route } from 'preact-router';
 import useAuthStore from '../../../../store/authStore';
-import axios from 'axios';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 
 const Login = ({ setShowLogin }) => {
-    const { login } = useAuthStore();
+    const { login, error, loading } = useAuthStore(); // Usamos el store
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
 
         if (!email || !password) {
-            setError('Por favor, completa todos los campos.');
-            return;
+            setSuccess(null); // Reset success message
+            return; // Evitamos continuar si los campos están vacíos
         }
 
         try {
-            const response = await axios.post('http://localhost:3000/api/login', { email, password });
-            login(response.data.token);
+            const response = await login(email, password);
             setSuccess('¡Inicio de sesión exitoso!');
             route('/games');
-            setSuccess(null);
+            setSuccess(null); // Reset success after redirect
         } catch (err) {
-            setError('Credenciales incorrectas');
+            // Si ocurre un error, el mensaje de error se maneja a través del store
+            setSuccess(null); // Reset success message
         }
     };
 
@@ -41,7 +39,7 @@ const Login = ({ setShowLogin }) => {
             <div className="mb-4">
                 <input type="password" placeholder="Contraseña" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full p-3 border rounded-md" />
             </div>
-            <button type="submit" className="w-full bg-blue-500 text-white p-3 rounded-lg">Iniciar Sesión</button>
+            <button type="submit" className="w-full bg-blue-500 text-white p-3 rounded-lg" disabled={loading}>Iniciar Sesión</button>
             <p className="mt-4 text-center">
                 ¿No estás registrado? 
                 <button 

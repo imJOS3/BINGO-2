@@ -12,10 +12,11 @@ export default function OneGame() {
 
   // Solo muestra el modal si selectedGame no es nulo
   if (!selectedGame) return null;
-
+ 
+  //fucnin que entra al juego
   const handleGame = async () => {
     try {
-      await joinGame(selectedGame.id, userInfo.id);
+      await joinGame(selectedGame.id, userInfo.id );
       setSelectedCard(null); // Limpia la carta seleccionada antes de unirse a un nuevo juego
       route(`game/${selectedGame.id}`); // Redirige a la página del juego después de unirse
     } catch (error) {
