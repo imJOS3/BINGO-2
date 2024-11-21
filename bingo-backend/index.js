@@ -1,19 +1,21 @@
 import express from 'express';
-import http from 'http'; // Importa http para usarlo con Socket.IO
-import { Server as SocketIOServer } from 'socket.io'; // Importa la clase Server de Socket.IO
+import http from 'http'; 
+import { Server as SocketIOServer } from 'socket.io'; 
 import db from './database/db.js';
 import bingoRoutes from './routes/bingoRoutes.js';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import os from 'os'; 
 
-dotenv.config();
+
 
 const app = express();
 // Crear un servidor HTTP para usar con Socket.IO
+dotenv.config();
 const server = http.createServer(app);
 const io = new SocketIOServer(server, {
   cors: {
-    origin: '*', // Permitir todas las solicitudes desde cualquier origen
+    origin: ['*', 'http://localhost:5173'], // Permitir todas las solicitudes desde cualquier origen
   },
 });
 
@@ -50,8 +52,27 @@ io.on('connection', (socket) => {
   });
 });
 
+// Función para obtener la dirección IP local
+const getLocalIp = () => {
+  const networkInterfaces = os.networkInterfaces();
+  for (let interfaceName in networkInterfaces) {
+    for (let interfaceDetails of networkInterfaces[interfaceName]) {
+      // Si es una dirección IPv4, devolvemos la dirección IP
+      if (interfaceDetails.family === 'IPv4' && !interfaceDetails.internal) {
+        return interfaceDetails.address;
+      }
+    }
+  }
+  return 'localhost'; // Si no se puede obtener, devolvemos localhost como valor predeterminado
+};
+
+// Obtener la IP local
+const localIp = getLocalIp();
+
 // Iniciar el servidor y sincronizar la base de datos
 server.listen(PORT, async () => {
-  console.log(`Servidor corriendo en http://localhost:${PORT}`);
+  console.log(`Servidor corriendo en http://${localIp}:${PORT}`);
+  console.log(`Accede a tu servidor en la red local con: http://${localIp}:${PORT}`);
+  console.log(`Accede a tu servidor desde fuera de la red local con: http://<tu-ip-publica>:${PORT}`);
   await db.sync(); // Sincroniza los modelos con la base de datos
 });

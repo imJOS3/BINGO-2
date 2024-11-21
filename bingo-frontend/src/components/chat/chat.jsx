@@ -1,52 +1,71 @@
-// src/components/Chat.jsx
-import { h } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
 import { io } from 'socket.io-client';
 
-const Chat = () => {
+const Chat = ({ isOpen, toggleChat }) => {
   const [socket, setSocket] = useState(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
 
   useEffect(() => {
-    // Conectar al servidor de WebSockets
-    const newSocket = io('http://localhost:3000'); // Asegúrate de que esta URL coincida con tu servidor backend
+    if (!isOpen) return; // Evita conexiones innecesarias si el chat está cerrado
+
+    // Usar wss:// para conexiones seguras cuando el servidor usa HTTPS
+    const newSocket = io(process.env.VITE_API_URL.replace(/^http/, 'wss'));
     setSocket(newSocket);
 
-    // Escucha mensajes del servidor
     newSocket.on('chat message', (msg) => {
       setMessages((prev) => [...prev, msg]);
     });
 
-    // Limpiar al desmontar
     return () => newSocket.close();
-  }, []);
+  }, [isOpen]);
 
   const sendMessage = (e) => {
     e.preventDefault();
     if (input && socket) {
       socket.emit('chat message', input);
-      setInput(''); // Limpia el campo de entrada
+      setInput('');
     }
   };
 
+  if (!isOpen) return null; // No renderizar si está cerrado
+
   return (
-    <div className="flex flex-col h-96 w-80 border border-gray-300 rounded-lg overflow-hidden">
-      <div className="flex-1 overflow-y-auto p-4 bg-gray-100">
+    <div
+      className="fixed bottom-0 z-50 right-0 w-1/3 h-1/2 p-4 backdrop-blur-sm bg-transparent border border-gray-300 rounded-lg shadow-lg flex flex-col"
+      style={{ zIndex: 1000 }}
+    >
+      {/* Botón para cerrar */}
+      <button
+        onClick={toggleChat}
+        className="absolute top-2 right-2 text-gray-500 hover:text-red-500"
+        aria-label="Cerrar chat"
+      >
+        ✖
+      </button>
+
+      <div className="flex-1 overflow-y-auto">
         <ul className="space-y-2">
           {messages.map((msg, index) => (
-            <li key={index} className="p-2 bg-blue-200 rounded-md">{msg}</li>
+            <li key={index} className="p-2 bg-blue-500/70 text-white rounded-md">
+              {msg}
+            </li>
           ))}
         </ul>
       </div>
-      <form onSubmit={sendMessage} className="flex border-t border-gray-300">
+      <form onSubmit={sendMessage} className="flex">
         <input
-          className="flex-1 p-2 border-none outline-none"
+          className="flex-1 p-2 border-none outline-none rounded-l-lg bg-white/50"
           value={input}
           onInput={(e) => setInput(e.target.value)}
           placeholder="Escribe un mensaje..."
         />
-        <button type="submit" className="p-2 bg-blue-500 text-white hover:bg-blue-600">Enviar</button>
+        <button
+          type="submit"
+          className="p-2 bg-blue-600 text-white hover:bg-blue-700 rounded-r-lg"
+        >
+          Enviar
+        </button>
       </form>
     </div>
   );

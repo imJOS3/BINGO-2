@@ -10,14 +10,19 @@ import Chat from '../../components/chat/chat';
 
 export default function Playing() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);  // Controlar si el chat está abierto
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
 
+  const toggleChat = () => {
+    setIsChatOpen(!isChatOpen); // Alternar el estado del chat
+  };
+
   return (
     <div className="flex w-screen h-full items-center justify-between">
-      <div className="h-full p-6 flex flex-col gap-4 bg-g justify-between">
+      <div className="h-full p-6 flex flex-col gap-4 justify-between">
         <GameMode />
         <div className="flex flex-col gap-5">
           <button className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 transition-all duration-200">
@@ -27,6 +32,7 @@ export default function Playing() {
             Ganadores
           </button>
         </div>
+        
         {/* Icono de configuración */}
         <div>
           <img 
@@ -38,22 +44,33 @@ export default function Playing() {
         </div>
       </div>
 
-      {/* Componente de menú de configuración, con la función onClose */}
+      {/* Componente de menú de configuración */}
       <WrapperSetting isOpen={isMenuOpen} onClose={toggleMenu} />
 
       <div className="flex flex-col items-center">
         <div className="flex border-s border-e border-t border-gray-900 w-full gap-4 items-center justify-center bg-purple-200 p-4 rounded-lg shadow-lg">
           <ContexChronometer />
-          <Chronometer />
+          <Chronometer /> 
         </div>
         <BingoCardPlaying />
       </div>
-      <h1>Chat en Tiempo Real</h1>
-      <Chat />
-
-      <div className="flex flex-col h-full mr-12">
+      
+      <div className="flex flex-col mr-20 w-min h-full">
         <WrapperStructureBall />
       </div>
+
+      {/* Botón flotante para abrir el chat */}
+      <div 
+        className="fixed top-4 right-4 bg-blue-600 p-4 rounded-full cursor-pointer shadow-lg hover:bg-blue-700 transition-all duration-200"
+        onClick={toggleChat}
+      >
+        <span className=" text-white text-xl">💬</span>
+      </div>
+
+      {/* Componente del chat */}
+      {isChatOpen && (
+        <Chat isOpen={isChatOpen} toggleChat={toggleChat} />
+      )}
     </div>
   );
 }

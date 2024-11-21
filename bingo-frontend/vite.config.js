@@ -1,20 +1,23 @@
-// vite.config.js
-
 import { defineConfig } from 'vite';
 import preact from '@preact/preset-vite';
+import jsx from '@vitejs/plugin-vue-jsx';
+import dotenv from 'dotenv';
+
+// Carga las variables de entorno
+dotenv.config();
 
 export default defineConfig({
-  plugins: [preact()],
+  plugins: [preact(), jsx()],
   server: {
     proxy: {
       '/socket.io': {
-        target: 'http://localhost:3000',
+        target: process.env.VITE_API_URL, 
         ws: true,
       },
     },
   },
   esbuild: {
     loader: 'jsx',
-    include: /src\/.*\.js$/, // Aplicar loader jsx a todos los archivos .js en src
+    include: /src\/.*\.js$/,
   },
 });

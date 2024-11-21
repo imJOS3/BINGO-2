@@ -1,12 +1,12 @@
 import { useState } from 'preact/hooks';
-import axios from 'axios';
+import useAuthStore from '../../../../store/authStore';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 
 export default function Register({ setShowLogin }) { 
+    const { register, error, loading } = useAuthStore(); // Usamos el store
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
 
     const handleSubmit = async (e) => {
@@ -14,20 +14,20 @@ export default function Register({ setShowLogin }) {
         setError(null);
         setSuccess(null);
 
+        if (!username || !email || !password) {
+            setError('Por favor, completa todos los campos.');
+            return;
+        }
+
         try {
-            const response = await axios.post('http://localhost:3000/api/register', {
-                nickname: username,
-                email,
-                password
-            });
-            console.log('Registro exitoso:', response.data);
+            const response = await register(username, email, password);
+            console.log('Registro exitoso:', response);
             setSuccess('Usuario registrado con éxito');
             setUsername('');
             setEmail('');
             setPassword('');
         } catch (err) {
-            console.error('Error al registrar el usuario:', err); // Log para verificar errores
-            setError('Error al registrar el usuario');
+            setSuccess(null); // Reset success message on error
         }
     };
 
@@ -66,10 +66,22 @@ export default function Register({ setShowLogin }) {
                     required 
                 />
             </div>
-            <button type="submit" className="w-full bg-blue-500 text-white p-3 rounded-lg">Registrarse</button>
+            <button 
+                type="submit" 
+                className="w-full bg-blue-500 text-white p-3 rounded-lg" 
+                disabled={loading}
+            >
+                Registrarse
+            </button>
             <p className="mt-4 text-center">
                 ¿Ya tienes cuenta? 
-                <button onClick={() => setShowLogin(true)} type="button" className="text-blue-500">Inicia sesión aquí</button>
+                <button 
+                    onClick={() => setShowLogin(true)} 
+                    type="button" 
+                    className="text-blue-500"
+                >
+                    Inicia sesión aquí
+                </button>
             </p>
         </form>
     );

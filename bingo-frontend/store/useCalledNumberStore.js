@@ -2,14 +2,16 @@ import { create } from 'zustand';
 import axios from 'axios';
 import { persist } from 'zustand/middleware';
 
-const API_URL = 'http://localhost:3000/api';
+// URL base de la API desde las variables de entorno
+const API_URL = `${import.meta.env.VITE_API_URL}/api`;
 
- const useCalledNumbersStore = create(
+const useCalledNumbersStore = create(
   persist(
     (set) => ({
         calledNumbers: [],
         nextNumber: null,
 
+        // Función para obtener el siguiente número llamado
         fetchNextNumber: async (gameId) => {
             try {
                 const response = await axios.post(`${API_URL}/called-number/${gameId}`);
@@ -31,8 +33,10 @@ const API_URL = 'http://localhost:3000/api';
     }
   )
 );
+
 export default useCalledNumbersStore;
 
+// Función para determinar la letra de bingo en base al número
 const getBingoLetter = (number) => {
     if (number >= 1 && number <= 15) return 'B';
     if (number >= 16 && number <= 30) return 'I';
