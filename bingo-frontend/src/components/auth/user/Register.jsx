@@ -1,4 +1,4 @@
-import { useState } from 'preact/hooks';
+import { useState, useEffect } from 'preact/hooks';
 import useAuthStore from '../../../../store/authStore';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 
@@ -32,57 +32,59 @@ export default function Register({ setShowLogin }) {
     };
 
     return (
-        <form onSubmit={handleSubmit} className="mt-10 p-6 bg-white shadow-md rounded-lg transition-all duration-300 ease-in-out">
-            <h1 className="text-2xl font-semibold mb-6 text-center text-blue-600">Crear una Cuenta</h1>
-            {error && <p className="mb-4 text-red-500 text-center">{error}</p>}
-            {success && <p className="mb-4 text-green-500 text-center">{success}</p>}
-            <div className="mb-4">
-                <input 
-                    type="text" 
-                    placeholder="Nombre de usuario" 
-                    value={username} 
-                    onChange={(e) => setUsername(e.target.value)} 
-                    className="w-full p-3 border rounded-md" 
-                    required 
-                />
-            </div>
-            <div className="mb-4">
-                <input 
-                    type="email" 
-                    placeholder="Correo electrónico" 
-                    value={email} 
-                    onChange={(e) => setEmail(e.target.value)} 
-                    className="w-full p-3 border rounded-md" 
-                    required 
-                />
-            </div>
-            <div className="mb-4">
-                <input 
-                    type="password" 
-                    placeholder="Contraseña" 
-                    value={password} 
-                    onChange={(e) => setPassword(e.target.value)} 
-                    className="w-full p-3 border rounded-md" 
-                    required 
-                />
-            </div>
-            <button 
-                type="submit" 
-                className="w-full bg-blue-500 text-white p-3 rounded-lg" 
-                disabled={loading}
+        <div className="flex justify-center items-center h-full">
+            <form 
+                onSubmit={handleSubmit} 
+                className="bg-white/70 backdrop-blur-md p-8 rounded-lg shadow-md w-full sm:w-96"
             >
-                Registrarse
-            </button>
-            <p className="mt-4 text-center">
-                ¿Ya tienes cuenta? 
+                <h1 className="text-2xl font-semibold mb-6 text-center text-gray-800">Crear una Cuenta</h1>
+                {error && <p className="mb-4 text-red-500 text-center">{error}</p>}
+                {success && <p className="mb-4 text-green-500 text-center">{success}</p>}
+                <div className="mb-4">
+                    <input 
+                        type="text" 
+                        placeholder="Nombre de usuario" 
+                        value={username} 
+                        onChange={(e) => setUsername(e.target.value)} 
+                        className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                </div>
+                <div className="mb-4">
+                    <input 
+                        type="email" 
+                        placeholder="Correo electrónico" 
+                        value={email} 
+                        onChange={(e) => setEmail(e.target.value)} 
+                        className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                </div>
+                <div className="mb-4">
+                    <input 
+                        type="password" 
+                        placeholder="Contraseña" 
+                        value={password} 
+                        onChange={(e) => setPassword(e.target.value)} 
+                        className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                </div>
                 <button 
-                    onClick={() => setShowLogin(true)} 
-                    type="button" 
-                    className="text-blue-500"
+                    type="submit" 
+                    className="w-full bg-blue-500 text-white p-3 rounded-lg hover:bg-blue-600 transition-all duration-300"
+                    disabled={loading}
                 >
-                    Inicia sesión aquí
+                    {loading ? 'Cargando...' : 'Registrarse'}
                 </button>
-            </p>
-        </form>
+                <p className="mt-4 text-center text-gray-600">
+                    ¿Ya tienes cuenta?  
+                    <button 
+                        onClick={() => setShowLogin(true)} 
+                        type="button" 
+                        className="text-blue-500 font-semibold"
+                    >
+                          Inicia sesión aquí
+                    </button>
+                </p>
+            </form>
+        </div>
     );
 }
