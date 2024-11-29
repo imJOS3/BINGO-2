@@ -4,7 +4,7 @@ import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
 
 const apiUrl = import.meta.env.VITE_API_URL;
-
+    
 const decodeToken = (token) => {
     try {
         return jwtDecode(token);
