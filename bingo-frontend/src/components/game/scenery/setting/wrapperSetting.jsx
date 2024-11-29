@@ -49,35 +49,49 @@ export default function WrapperSetting({ isOpen, onClose }) {
         {/* Overlay oscuro con transparencia */}
         <div
           className={`fixed inset-0 bg-black bg-opacity-50 z-10 transition-opacity duration-300 ${
-            isTransitioning ? 'opacity-100' : 'opacity-0'
+            isTransitioning ? "opacity-100" : "opacity-0"
           }`}
         ></div>
 
         {/* Contenedor del menú */}
         <div
           ref={wrapperRef}
-          className={`fixed top-0 left-0 w-64 h-full bg-gray-800 text-white shadow-lg z-20 p-4 transform transition-transform duration-300 ${
-            isTransitioning ? 'translate-x-0' : '-translate-x-full'
-          }`}
+          className={`fixed top-0 left-0 w-80 max-w-xs h-full bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800 text-white shadow-lg z-20 p-6 transform transition-transform duration-300 ${
+            isTransitioning ? "translate-x-0" : "-translate-x-full"
+          } flex flex-col gap-4`}
         >
-          <h2 className="text-xl font-semibold mb-4">Opciones</h2>
+          <h2 className="text-2xl font-bold mb-4 text-center border-b border-gray-600 pb-2">
+            Opciones
+          </h2>
 
-           <LeaveGame />    
-          <button
-            onClick={toggleMute}
-            className={`text-left w-full p-3 rounded-lg transition ${
-              isMuted ? "bg-gray-600 hover:bg-gray-700" : "bg-green-600 hover:bg-green-700"
-            }`}
-          >
-            {isMuted ? "Reactivar Sonido" : "Silenciar Música"}
-          </button>
+          <div className="flex flex-col gap-4">
+            <LeaveGame />
 
-          <button
-            onClick={viewProfile}
-            className="text-left w-full p-3 rounded-lg bg-blue-600 hover:bg-blue-700 transition"
-          >
-            Ver Perfil
-          </button>
+            <button
+              onClick={toggleMute}
+              className={`w-full p-3 rounded-lg font-medium text-center transition ${
+                isMuted
+                  ? "bg-red-600 hover:bg-red-700"
+                  : "bg-green-600 hover:bg-green-700"
+              }`}
+            >
+              {isMuted ? "Reactivar Sonido" : "Silenciar Música"}
+            </button>
+
+            <button
+              onClick={viewProfile}
+              className="w-full p-3 rounded-lg bg-blue-600 hover:bg-blue-700 font-medium text-center transition"
+            >
+              Ver Perfil
+            </button>
+
+            <button
+              onClick={handleLogout}
+              Cerrar Sesión
+              className="w-full p-3 rounded-lg bg-yellow-500 hover:bg-yellow-600 font-medium text-center transition"
+            >
+            </button>
+          </div>
         </div>
       </>
     )
