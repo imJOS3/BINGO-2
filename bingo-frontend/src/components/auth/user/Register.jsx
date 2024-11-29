@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'preact/hooks';
+import { useState } from 'preact/hooks';
 import useAuthStore from '../../../../store/authStore';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 
@@ -11,22 +11,22 @@ export default function Register({ setShowLogin }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError(null);
         setSuccess(null);
 
         if (!username || !email || !password) {
+            setSuccess(null);
             setError('Por favor, completa todos los campos.');
             return;
         }
 
         try {
             const response = await register(username, email, password);
-            console.log('Registro exitoso:', response);
-            setSuccess('Usuario registrado con éxito');
+            setSuccess('¡Usuario creado correctamente! Ahora puedes iniciar sesión.');
             setUsername('');
             setEmail('');
             setPassword('');
         } catch (err) {
+            console.error('Error al registrar usuario:', err.message);
             setSuccess(null); // Reset success message on error
         }
     };
@@ -74,6 +74,17 @@ export default function Register({ setShowLogin }) {
                 >
                     {loading ? 'Cargando...' : 'Registrarse'}
                 </button>
+                {success && (
+                    <div className="mt-4 text-center">
+                        <button 
+                            onClick={() => setShowLogin(true)} 
+                            type="button" 
+                            className="text-blue-500 font-semibold underline"
+                        >
+                            Inicia sesión aquí
+                        </button>
+                    </div>
+                )}
                 <p className="mt-4 text-center text-gray-600">
                     ¿Ya tienes cuenta?  
                     <button 
@@ -81,7 +92,7 @@ export default function Register({ setShowLogin }) {
                         type="button" 
                         className="text-blue-500 font-semibold"
                     >
-                          Inicia sesión aquí
+                        Inicia sesión aquí
                     </button>
                 </p>
             </form>
