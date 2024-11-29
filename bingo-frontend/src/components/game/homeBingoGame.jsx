@@ -1,11 +1,9 @@
-import { useEffect, useState } from 'preact/hooks';
-import axios from 'axios';
 import imgInicio from "../../assets/imgs/imgInicio.png";
 
 import { route } from 'preact-router';
 
 export default function BingoGame () {
-    const [games, setGames] = useState([]);
+
 
     const botones = [
         {
@@ -28,21 +26,6 @@ export default function BingoGame () {
             offset: "-translate-y-1/2" // Eleva este botón
         }
     ];
-
-    // Función para obtener los juegos disponibles
-    const fetchGames = async () => {
-        try {
-            const response = await axios.get('http://localhost:3000/api/game'); 
-            setGames(response.data);
-        } catch (error) {
-            console.error('Error al obtener los juegos:', error);
-        }
-    };
-
-    // Efecto para cargar los juegos al montar el componente
-    useEffect(() => {
-        fetchGames();
-    }, []);
 
     return (
         <div className="flex flex-col items-center  justify-center h-svh w-screen bg-[#a9d9e6]">
