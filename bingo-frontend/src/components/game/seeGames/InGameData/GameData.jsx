@@ -9,7 +9,6 @@ import { route } from "preact-router";
 
 export default function GameData() {
   const { selectedGame, clearSelectedGame,  } = useGameStore();
-  console.log(selectedGame.id)
   const { userInfo } = useAuthStore();
   const { leaveGame, fetchPlayers } = useUsersGame();
   const [showPlayers, setShowPlayers] = useState(false);
@@ -17,6 +16,7 @@ export default function GameData() {
   const handleLeaveGame = async () => {
     try {
       await leaveGame(selectedGame.id, userInfo.id);
+      console.log(userInfo.id)
       clearSelectedGame();
       route("/game");
     } catch (error) {

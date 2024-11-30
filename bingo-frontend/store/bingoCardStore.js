@@ -46,7 +46,7 @@ const useBingoCardStore = create((set) => {
             } catch (error) {
                 set({ loading: false, error: error.message });
             }
-        },
+         },
 
         // Función para obtener cartas por user_id y game_id
         fetchCardsByUserAndGame: async (user_id, game_id) => {

@@ -1,7 +1,7 @@
 import express from 'express';
 import { verifyToken } from '../middleware/authMiddleware.js';
 import {createBingoCard, getBingoCardsByUserAndGame, getBingoCardById, updateBingoCardByUserAndGame, updateBingoCardById, deleteBingoCardById, deleteBingoCardByUserAndGame } from '../controller/bingoControllerCard.js'
-import { createGame, getAllGames, getGameById} from '../controller/bingoGameController.js';
+import { createGame, getAllGames, getGameById, updateGame} from '../controller/bingoGameController.js';
 import { getPlayersByGameId, leaveGame, joinGame } from '../controller/bingoUsersGameController.js';
 import { LoginUser, RegisterUser } from '../controller/bingoUserController.js';
 import { BingoControllerCalledNumber } from '../controller/bingoControllerCalledNumber.js';
@@ -24,6 +24,7 @@ router.delete('/bingo-card/user/:user_id/game/:game_id', deleteBingoCardByUserAn
 router.get('/game', getAllGames);
 router.get('/game/:id',  getGameById);
 router.post('/game',  createGame);
+router.put('/games/:id', updateGame);
 
 //Rutas para la partida 
 router.post('/game/:game_id/join', joinGame);   // Ruta para unirse al juego

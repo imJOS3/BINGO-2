@@ -21,7 +21,6 @@ const Game = db.define('Game', {
         type: DataTypes.INTEGER,
         allowNull: false,
     },
-
     creator_id: {
         type: DataTypes.INTEGER,
         allowNull: false,  
@@ -30,7 +29,15 @@ const Game = db.define('Game', {
         type: DataTypes.INTEGER,
         allowNull: true,  
     },
-    
+    game_time: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 3, // Tiempo predeterminado de 3 minutos
+        validate: {
+            min: 3, // Valor mínimo permitido
+            max: 6, // Valor máximo permitido
+        },
+    },
     created_at: {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW,
@@ -48,4 +55,3 @@ Game.belongsTo(GameMode, { foreignKey: 'game_mode_id' });
 
 // Exporta el modelo
 export default Game;
-

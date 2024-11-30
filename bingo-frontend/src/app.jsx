@@ -4,11 +4,11 @@ import useAuthStore from "../store/authStore";
 import NavBar from "./components/navBar/NavBar";
 import Register from "./routes/regiter/register";
 import Home from "./routes/home";
-import game from "./routes/game/game";
+import Game from "./routes/game/game";
 import { ProtectedRoute } from "../utils/ProtectedRoute";
-import TableGames from "./components/game/seeGames/tableGame";
 import GameID from "./routes/game/ID/gameID";
 import Playing from "./routes/playing/playing";
+import Games from "./routes/games/games";
 
 export function App() {
   const { auth, login, logout, isAuthenticated } = useAuthStore();
@@ -41,8 +41,8 @@ export function App() {
         <Router onChange={handleRouteChange}>
           <Home path="/" />
           <Register path="/login" onLogin={handleLogin} />
-          <ProtectedRoute Component={game} path="/games" />
-          <ProtectedRoute Component={TableGames} path="/game" />
+          <ProtectedRoute Component={Game} path="/games" />
+          <ProtectedRoute Component={Games} path="/game" />
           <ProtectedRoute Component={GameID} path="/game/:id" />
           <ProtectedRoute Component={Playing} path="/playing/:id" />
         </Router>

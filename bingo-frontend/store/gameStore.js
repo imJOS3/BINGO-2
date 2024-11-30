@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import axios from 'axios';
-import { persist } from "zustand/middleware";  // Importamos el middleware de persistencia
+import { persist } from "zustand/middleware"; 
 
 // URL base de la API desde las variables de entorno
 const apiUrl = import.meta.env.VITE_API_URL;
@@ -49,15 +49,25 @@ const useGameStore = create(
       createGame: async (gameData) => {
         set({ loading: true, error: null });
         try {
-          const response = await axios.post(`${apiUrl}/api/game`, gameData);
-          set((state) => ({
-            games: [...state.games, response.data],
-            loading: false,
-          }));
+            const response = await axios.post(`${apiUrl}/api/game`, gameData);
+            const createdGame = response.data; // Obtenemos el juego creado
+            
+            if (!createdGame || !createdGame.id) {
+                throw new Error("Game creation failed, no valid response from server.");
+            }
+    
+            set((state) => ({
+                games: [...state.games, createdGame],
+                loading: false,
+                selectedGame: createdGame, // Seleccionamos el nuevo juego creado
+            }));
+    
+            return createdGame; // Devuelve el juego creado
         } catch (error) {
-          set({ loading: false, error: error.message });
+            set({ loading: false, error: error.message });
+            throw error; // Re-lanza el error para manejarlo en el componente
         }
-      },
+    },
     }),
     {
       name: "game-store",  // Nombre para la clave en localStorage
