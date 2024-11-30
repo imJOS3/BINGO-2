@@ -21,8 +21,8 @@ export default function BingoCard() {
   useEffect(() => {
     const loadCard = async () => {
       if (userInfo && selectedGame && !isCardLoaded) {
-        await fetchCardsByUserAndGame(userInfo.id, selectedGame.id);
-        const updatedSelectedCard = useBingoCardStore.getState().selectedCard;
+        const updatedSelectedCard = await fetchCardsByUserAndGame(userInfo.id, selectedGame.id);
+        
         if (!updatedSelectedCard) {
           await generateAndSaveCard(userInfo.id, selectedGame.id);
         }

@@ -10,7 +10,7 @@ export default function CreateGameModal({ onClose }) {
     const [gameTime, setGameTime] = useState(3);
     const [creatorId, setCreatorId] = useState(null);
 
-    const { createGame, fetchGames } = useGameStore();
+    const { createGame, fetchGames, setSelectedGame } = useGameStore();
     const { userInfo } = useAuthStore();
     const { joinGame } = useUsersGame();
 
