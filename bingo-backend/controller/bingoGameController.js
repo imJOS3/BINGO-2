@@ -78,3 +78,83 @@ export const updateGame = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+// Función para iniciar un juego
+export const startGame = async (req, res) => {
+    const { id } = req.params; // ID del juego
+    const { creator_id } = req.body; // ID del creador que intenta iniciar el juego
+
+    try {
+        // Buscar el juego por ID
+        const game = await games.findByPk(id);
+        if (!game) {
+            return res.status(404).json({ message: "Game not found" });
+        }
+
+        // Validar si el creador de la partida coincide con el que hace la solicitud
+        if (game.creator_id !== creator_id) {
+            return res.status(403).json({ message: "Only the creator can start the game" });
+        }
+
+        // Cambiar el estado del juego a "in_progress"
+        game.game_status = "in_progress";
+        await game.save(); // Guardar los cambios en la base de datos
+
+        res.status(200).json({ message: "Game started successfully", game });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+//funcion para cambair el estado del juego a finalizado 
+export const finalizeGame = async (req, res) => {
+    const { id } = req.params; // ID del juego
+    const { creator_id } = req.body; // ID del creador
+
+    try {
+        // Buscar el juego por ID
+        const game = await games.findByPk(id);
+        if (!game) {
+            return res.status(404).json({ message: "Game not found" });
+        }
+
+        // Validar si el creador de la partida coincide con el que hace la solicitud
+        if (game.creator_id !== creator_id) {
+            return res.status(403).json({ message: "Only the creator can finalize the game" });
+        }
+
+        // Actualizar el estado del juego a "completed"
+        game.game_status = "completed";
+        await game.save();
+
+        res.status(200).json({ message: "Game has been finalized", game });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+
+//funcion para cambair el estado del juego a activo
+export const activateGame = async (req, res) => {
+    const { id } = req.params; // ID del juego
+    const { creator_id } = req.body; // ID del creador
+
+    try {
+        // Buscar el juego por ID
+        const game = await games.findByPk(id);
+        if (!game) {
+            return res.status(404).json({ message: "Game not found" });
+        }
+
+        // Validar si el creador de la partida coincide con el que hace la solicitud
+        if (game.creator_id !== creator_id) {
+            return res.status(403).json({ message: "Only the creator can activate the game" });
+        }
+
+        // Actualizar el estado del juego a "active"
+        game.game_status = "active";
+        await game.save();
+
+        res.status(200).json({ message: "Game has been reactivated", game });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};

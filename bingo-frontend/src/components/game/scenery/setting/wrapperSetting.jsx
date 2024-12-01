@@ -87,9 +87,10 @@ export default function WrapperSetting({ isOpen, onClose }) {
 
             <button
               onClick={handleLogout}
-              Cerrar Sesión
+              
               className="w-full p-3 rounded-lg bg-yellow-500 hover:bg-yellow-600 font-medium text-center transition"
             >
+              Cerrar Sesión
             </button>
           </div>
         </div>
