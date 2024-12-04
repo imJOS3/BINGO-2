@@ -13,7 +13,7 @@ const server = http.createServer(app);
 
 const io = new SocketIOServer(server, {
   cors: {
-    origin: "*", // Asegúrate de usar la URL correcta del frontend.
+    origin: "https://www.bingonline.fun", // Asegúrate de usar la URL correcta del frontend.
   },
 });
 
