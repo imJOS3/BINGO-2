@@ -12,7 +12,7 @@ Bingo en tiempo real para jugar en mesa: crear o unirse a una sala, marcar el ca
 ### Cuentas
 - Registro e inicio de sesión con correo y contraseña
 - Invitado (guest)
-- Google y Facebook (OAuth); hay que poner las claves en `.env`
+- Google (OAuth); hay que poner la clave en `.env`
 - JWT en el cliente (`authStore`)
 
 ### Salas
@@ -64,7 +64,7 @@ Las bolas salen solas cada **5 segundos** (`services/ballCaller.js`) mientras la
 
 ## API (prefijo `/api`)
 
-**Público:** `POST /login`, `/register`, `/auth/guest`, `/auth/google`, `/auth/facebook`
+**Público:** `POST /login`, `/register`, `/auth/guest`, `/auth/google`
 
 **Mesas:** `GET /game`, `/game/search`, `/game/:id`, `POST /game`, `PUT /games/:id`, `POST .../start`, `.../restart`, `.../claim-win`, `PATCH .../finalize`, `.../activate`
 
@@ -92,8 +92,7 @@ Hace falta **Node.js** y **MySQL**.
 
 ```bash
 cd bingo-backend
-cp .env.example .env
-# Completa DB_*, JWT_SECRET y, si usas OAuth, las claves
+# Crea un .env con DB_*, JWT_SECRET y, si usas OAuth, las claves
 npm install
 npm run dev
 ```
@@ -106,8 +105,7 @@ Opcional: `npm run db:sync` (`database/sync.js`). `DB_SYNC_ALTER=true` solo si h
 
 ```bash
 cd bingo-frontend
-cp .env.example .env
-# VITE_API_URL=http://localhost:3000
+# Crea un .env con VITE_API_URL=http://localhost:3000
 npm install
 npm run dev
 ```
@@ -116,11 +114,11 @@ Vite en el puerto **5173**. CORS del backend admite `localhost:5173` y `https://
 
 ## Variables de entorno
 
-No subas archivos `.env`. Usa `.env.example`.
+No subas archivos `.env`.
 
-**Backend:** `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT`, `DB_SSL`, `JWT_SECRET`, `PORT`, `DB_SYNC_ALTER`, `GOOGLE_CLIENT_ID`, `FACEBOOK_APP_ID`, `FACEBOOK_APP_SECRET`
+**Backend:** `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`, `DB_PORT`, `DB_SSL`, `JWT_SECRET`, `PORT`, `DB_SYNC_ALTER`, `GOOGLE_CLIENT_ID`
 
-**Frontend:** `VITE_API_URL`, `VITE_GOOGLE_CLIENT_ID`, `VITE_FACEBOOK_APP_ID`
+**Frontend:** `VITE_API_URL`, `VITE_GOOGLE_CLIENT_ID`
 
 ## Estructura (lo más usado)
 
@@ -143,4 +141,4 @@ bingo-frontend/
 - Este README describe el estado **actual** de la mesa en vivo, OAuth, rondas, cola y UI de partida.
 - Los `.env` no van al remoto (están en `.gitignore`).
 - `node_modules` y `dist` tampoco.
-- Tras clonar: copiar `.env.example`, `npm install` en backend y frontend, y levantar MySQL.
+- Tras clonar: crear los `.env`, `npm install` en backend y frontend, y levantar MySQL.

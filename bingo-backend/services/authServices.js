@@ -155,60 +155,12 @@ export const loginWithGoogle = async (idToken) => {
     });
 };
 
-export const loginWithFacebook = async (accessToken) => {
-    const appId = process.env.FACEBOOK_APP_ID;
-    const appSecret = process.env.FACEBOOK_APP_SECRET;
-
-    if (!appId || !appSecret) {
-        throw new Error('Facebook app credentials are not configured');
-    }
-    if (!accessToken) {
-        throw new Error('Facebook token is required');
-    }
-
-    const appAccessToken = `${appId}|${appSecret}`;
-    const debugUrl = new URL('https://graph.facebook.com/debug_token');
-    debugUrl.searchParams.set('input_token', accessToken);
-    debugUrl.searchParams.set('access_token', appAccessToken);
-
-    const debugRes = await fetch(debugUrl);
-    const debugJson = await debugRes.json();
-    const data = debugJson?.data;
-
-    if (!data?.is_valid || String(data.app_id) !== String(appId)) {
-        throw new Error('Invalid Facebook token');
-    }
-
-    const meUrl = new URL('https://graph.facebook.com/me');
-    meUrl.searchParams.set('fields', 'id,name,email');
-    meUrl.searchParams.set('access_token', accessToken);
-
-    const meRes = await fetch(meUrl);
-    const profile = await meRes.json();
-
-    if (!profile?.id) {
-        throw new Error('Could not fetch Facebook profile');
-    }
-
-    return findOrCreateOAuthUser({
-        provider: 'facebook',
-        providerId: profile.id,
-        email: profile.email || null,
-        name: profile.name || 'Facebook',
-    });
-};
-
 export const login = async (email, password) => {
     const user = await User.findOne({ where: { email } });
     if (!user) throw new Error('User not found');
 
     if (!user.password) {
-        const providerLabel =
-            user.provider === 'google'
-                ? 'Google'
-                : user.provider === 'facebook'
-                    ? 'Facebook'
-                    : 'social';
+        const providerLabel = user.provider === 'google' ? 'Google' : 'social';
         throw new Error(`Esta cuenta usa inicio de sesión con ${providerLabel}`);
     }
 

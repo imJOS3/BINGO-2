@@ -24,7 +24,7 @@ import {
     updateGame,
 } from '../controller/bingoGameController.js';
 import { getPlayersByGameId, leaveGame, joinGame } from '../controller/bingoUsersGameController.js';
-import { LoginUser, RegisterUser, GoogleAuth, FacebookAuth, GuestAuth } from '../controller/bingoUserController.js';
+import { LoginUser, RegisterUser, GoogleAuth, GuestAuth } from '../controller/bingoUserController.js';
 import {
     BingoControllerCalledNumber,
     getCalledNumbersByGame,
@@ -38,7 +38,6 @@ router.post('/login', LoginUser);
 router.post('/register', RegisterUser);
 router.post('/auth/guest', GuestAuth);
 router.post('/auth/google', GoogleAuth);
-router.post('/auth/facebook', FacebookAuth);
 
 // Lecturas públicas / con auth opcional
 router.get('/stats', getCasinoStats);

@@ -2,7 +2,6 @@ import {
     login,
     register,
     loginWithGoogle,
-    loginWithFacebook,
     loginAsGuest,
 } from "../services/authServices.js";
 
@@ -90,20 +89,6 @@ export const GoogleAuth = async (req, res) => {
         res.status(200).json({ token });
     } catch (error) {
         console.error("Google auth error:", error.message);
-        res.status(400).json({ message: "No se pudo iniciar sesión" });
-    }
-};
-
-export const FacebookAuth = async (req, res) => {
-    try {
-        const { accessToken } = req.body;
-        if (!accessToken) {
-            return res.status(400).json({ message: "No se pudo iniciar sesión" });
-        }
-        const token = await loginWithFacebook(accessToken);
-        res.status(200).json({ token });
-    } catch (error) {
-        console.error("Facebook auth error:", error.message);
         res.status(400).json({ message: "No se pudo iniciar sesión" });
     }
 };

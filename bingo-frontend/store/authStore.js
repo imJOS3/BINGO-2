@@ -102,19 +102,6 @@ const useAuthStore = create((set, get) => ({
         }
     },
 
-    loginWithFacebook: async (accessToken) => {
-        set({ loading: true, error: null });
-        try {
-            const response = await axios.post(`${apiUrl}/api/auth/facebook`, { accessToken });
-            applySession(set, response.data.token);
-            return response.data;
-        } catch (error) {
-            const message = toUserMessage(error, 'No se pudo iniciar sesión');
-            set({ loading: false, error: message });
-            throw new Error(message);
-        }
-    },
-
     logout: () => {
         localStorage.removeItem('authToken');
         localStorage.removeItem('userInfo');
