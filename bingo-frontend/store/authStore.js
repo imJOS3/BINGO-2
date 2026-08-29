@@ -2,10 +2,10 @@
 import { create } from 'zustand';
 import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
+import { toUserMessage } from '../src/utils/userError';
 
 const apiUrl = import.meta.env.VITE_API_URL;
 
-// Función para decodificar el token
 const decodeToken = (token) => {
     try {
         return jwtDecode(token);
@@ -15,68 +15,143 @@ const decodeToken = (token) => {
     }
 };
 
-// Store para autenticación
-const useAuthStore = create((set) => ({
+const applySession = (set, token) => {
+    localStorage.setItem('authToken', token);
+    const decoded = decodeToken(token);
+    const isGuest = Boolean(decoded?.isGuest || decoded?.provider === 'guest');
+    if (isGuest) {
+        localStorage.setItem('isGuest', '1');
+    } else {
+        localStorage.removeItem('isGuest');
+    }
+    set({
+        auth: true,
+        userInfo: decoded ? { ...decoded, isGuest } : null,
+        loading: false,
+        error: null,
+    });
+    return decoded;
+};
+
+const useAuthStore = create((set, get) => ({
     auth: false,
     userInfo: null,
     loading: false,
     error: null,
 
-    // Función para iniciar sesión
     login: async (email, password) => {
         set({ loading: true, error: null });
         try {
             const response = await axios.post(`${apiUrl}/api/login`, { email, password });
-            const token = response.data.token;
-
-            localStorage.setItem('authToken', token);
-            const decoded = decodeToken(token);
-            set({ auth: true, userInfo: decoded, loading: false });
+            applySession(set, response.data.token);
             return response.data;
         } catch (error) {
-            set({ loading: false, error: 'Error en el inicio de sesión' });
-            throw new Error(error.response?.data?.message || 'Credenciales incorrectas');
+            const message = toUserMessage(error, 'No se pudo iniciar sesión');
+            set({ loading: false, error: message });
+            throw new Error(message);
         }
     },
 
-    // Función para registrar un nuevo usuario
     register: async (username, email, password) => {
         set({ loading: true, error: null });
         try {
-            const response = await axios.post(`${apiUrl}/api/register`, { nickname: username, email, password });
-            set({ loading: false, error: null });
+            const response = await axios.post(`${apiUrl}/api/register`, {
+                nickname: username,
+                email,
+                password,
+            });
+            if (response.data.token) {
+                applySession(set, response.data.token);
+            } else {
+                set({ loading: false, error: null });
+            }
             return response.data;
         } catch (error) {
-            set({ loading: false, error: 'Error al registrar el usuario' });
-            throw new Error(error.response?.data?.message || 'Error al registrar el usuario');
+            const message = toUserMessage(error, 'No se pudo crear la cuenta');
+            set({ loading: false, error: message });
+            throw new Error(message);
         }
     },
 
-    // Función para cerrar sesión
+    /** Entra solo con un nombre — sin email ni contraseña */
+    loginAsGuest: async (nickname) => {
+        set({ loading: true, error: null });
+        try {
+            const response = await axios.post(`${apiUrl}/api/auth/guest`, {
+                nickname: nickname.trim(),
+            });
+            applySession(set, response.data.token);
+            return response.data;
+        } catch (error) {
+            const message = toUserMessage(error, 'No se pudo entrar como invitado');
+            set({ loading: false, error: message });
+            throw new Error(message);
+        }
+    },
+
+    loginWithGoogle: async (credential) => {
+        set({ loading: true, error: null });
+        try {
+            const response = await axios.post(`${apiUrl}/api/auth/google`, { credential });
+            applySession(set, response.data.token);
+            return response.data;
+        } catch (error) {
+            const message = toUserMessage(error, 'No se pudo iniciar sesión');
+            set({ loading: false, error: message });
+            throw new Error(message);
+        }
+    },
+
+    loginWithFacebook: async (accessToken) => {
+        set({ loading: true, error: null });
+        try {
+            const response = await axios.post(`${apiUrl}/api/auth/facebook`, { accessToken });
+            applySession(set, response.data.token);
+            return response.data;
+        } catch (error) {
+            const message = toUserMessage(error, 'No se pudo iniciar sesión');
+            set({ loading: false, error: message });
+            throw new Error(message);
+        }
+    },
+
     logout: () => {
         localStorage.removeItem('authToken');
         localStorage.removeItem('userInfo');
+        localStorage.removeItem('isGuest');
         set({ auth: false, userInfo: null });
     },
 
-    // Verificar si el usuario está autenticado
+    isGuest: () => Boolean(get().userInfo?.isGuest || localStorage.getItem('isGuest') === '1'),
+
     isAuthenticated: () => {
         const token = localStorage.getItem('authToken');
         if (token) {
             const decoded = decodeToken(token);
-            set({ auth: true, userInfo: decoded });
+            if (!decoded) {
+                localStorage.removeItem('authToken');
+                localStorage.removeItem('isGuest');
+                set({ auth: false, userInfo: null });
+                return;
+            }
+            if (decoded.exp && decoded.exp * 1000 < Date.now()) {
+                localStorage.removeItem('authToken');
+                localStorage.removeItem('isGuest');
+                set({ auth: false, userInfo: null });
+                return;
+            }
+            const isGuest = Boolean(decoded.isGuest || decoded.provider === 'guest');
+            set({ auth: true, userInfo: { ...decoded, isGuest } });
         } else {
             set({ auth: false, userInfo: null });
         }
     },
 
-    // Actualizar información del usuario
     setUserInfo: (newUserInfo) => {
         localStorage.setItem('userInfo', JSON.stringify(newUserInfo));
         set({ userInfo: newUserInfo });
     },
 
-    // Cargar información del usuario desde localStorage
     loadUserInfo: () => {
         const savedUser = localStorage.getItem('userInfo');
         if (savedUser) {

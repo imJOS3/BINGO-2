@@ -1,100 +1,118 @@
-import { useState, useEffect, useRef } from 'preact/hooks';
-import LeaveGame from './leaveGame';
+import { useState } from "preact/hooks";
+import { route } from "preact-router";
+import BingoSidebar from "../../../navBar/BingoSidebar";
+import LeaveConfirmModal from "./LeaveConfirmModal";
+import EditGameModal from "../../create/EditGameModal";
+import useUsersGame from "../../../../../store/usersGame";
+import useAuthStore from "../../../../../store/authStore";
+import useGameStore from "../../../../../store/gameStore";
 
 export default function WrapperSetting({ isOpen, onClose }) {
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const [isVisible, setIsVisible] = useState(isOpen);
-  const wrapperRef = useRef(null);
+  const [muted, setMuted] = useState(false);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
+  const [leaveError, setLeaveError] = useState(null);
+  const { leaveGame, loading } = useUsersGame();
+  const { userInfo } = useAuthStore();
+  const { selectedGame, clearSelectedGame } = useGameStore();
 
-  // Manejar transiciones al abrir/cerrar el menú
-  useEffect(() => {
-    if (isOpen) {
-      setIsVisible(true);
-      setTimeout(() => setIsTransitioning(true), 10); // Iniciar la animación de apertura
-    } else {
-      setIsTransitioning(false);
-      setTimeout(() => setIsVisible(false), 300); // Terminar la animación de cierre
-    }
-  }, [isOpen]);
+  const isHost =
+    userInfo?.id != null &&
+    selectedGame?.creator_id != null &&
+    String(userInfo.id) === String(selectedGame.creator_id);
+  const canEdit = isHost && selectedGame?.game_status === "active";
 
-  // Cerrar al hacer clic fuera del componente
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
-        onClose();
+  const handleLeave = async () => {
+    setLeaveError(null);
+    try {
+      if (selectedGame?.id && userInfo?.id) {
+        await leaveGame(selectedGame.id, userInfo.id);
       }
+      clearSelectedGame?.();
+      setShowLeaveConfirm(false);
+      onClose();
+      route("/game");
+    } catch (err) {
+      console.error(err);
+      setLeaveError("No se pudo salir de la partida. Inténtalo de nuevo.");
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [wrapperRef, onClose]);
-
-  const [isMuted, setIsMuted] = useState(false);
-
-  const handleLogout = () => {
-    alert("Cerrando sesión...");
   };
 
-  const toggleMute = () => {
-    setIsMuted(!isMuted);
-    alert(isMuted ? "Sonido activado" : "Sonido silenciado");
-  };
-
-  const viewProfile = () => {
-    alert("Viendo perfil...");
-  };
+  const actions = [
+    {
+      id: "leave",
+      label: "Salir de la partida",
+      hint: "Pide confirmación antes de irte",
+      tone: "danger",
+      keepOpen: true,
+      onClick: () => {
+        setLeaveError(null);
+        setShowLeaveConfirm(true);
+      },
+    },
+    ...(canEdit
+      ? [
+          {
+            id: "configure",
+            label: "Configurar mesa",
+            hint: "Modo, tiempo, nombre y visibilidad",
+            keepOpen: true,
+            onClick: () => setShowEdit(true),
+          },
+        ]
+      : []),
+    {
+      id: "sound",
+      label: muted ? "Activar sonido" : "Silenciar",
+      hint: muted ? "El audio está apagado" : "El audio está encendido",
+      tone: "accent",
+      keepOpen: true,
+      onClick: () => setMuted((v) => !v),
+    },
+    {
+      id: "mesas",
+      label: "Ver mesas",
+      hint: "Lista de partidas",
+      onClick: () => {
+        onClose();
+        route("/game");
+      },
+    },
+    {
+      id: "lobby",
+      label: "Lobby",
+      hint: "Pantalla de inicio del juego",
+      onClick: () => {
+        onClose();
+        route("/games");
+      },
+    },
+  ];
 
   return (
-    isVisible && (
-      <>
-        {/* Overlay oscuro con transparencia */}
-        <div
-          className={`fixed inset-0 bg-black bg-opacity-50 z-10 transition-opacity duration-300 ${
-            isTransitioning ? "opacity-100" : "opacity-0"
-          }`}
-        ></div>
-
-        {/* Contenedor del menú */}
-        <div
-          ref={wrapperRef}
-          className={`fixed top-0 left-0 w-80 max-w-xs h-full bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800 text-white shadow-lg z-20 p-6 transform transition-transform duration-300 ${
-            isTransitioning ? "translate-x-0" : "-translate-x-full"
-          } flex flex-col gap-4`}
-        >
-          <h2 className="text-2xl font-bold mb-4 text-center border-b border-gray-600 pb-2">
-            Opciones
-          </h2>
-
-          <div className="flex flex-col gap-4">
-            <LeaveGame />
-
-            <button
-              onClick={toggleMute}
-              className={`w-full p-3 rounded-lg font-medium text-center transition ${
-                isMuted
-                  ? "bg-red-600 hover:bg-red-700"
-                  : "bg-green-600 hover:bg-green-700"
-              }`}
-            >
-              {isMuted ? "Reactivar Sonido" : "Silenciar Música"}
-            </button>
-
-            <button
-              onClick={viewProfile}
-              className="w-full p-3 rounded-lg bg-blue-600 hover:bg-blue-700 font-medium text-center transition"
-            >
-              Ver Perfil
-            </button>
-
-            <button
-              onClick={handleLogout}
-              
-              className="w-full p-3 rounded-lg bg-yellow-500 hover:bg-yellow-600 font-medium text-center transition"
-            >
-              Cerrar Sesión
-            </button>
-          </div>
-        </div>
-      </>
-    )
+    <>
+      <BingoSidebar
+        isOpen={isOpen}
+        onClose={onClose}
+        title="Opciones"
+        subtitle="En partida"
+        actions={actions}
+      />
+      {showLeaveConfirm && (
+        <LeaveConfirmModal
+          gameName={selectedGame?.game_name}
+          loading={loading}
+          error={leaveError}
+          onCancel={() => setShowLeaveConfirm(false)}
+          onConfirm={handleLeave}
+        />
+      )}
+      {showEdit && selectedGame && (
+        <EditGameModal
+          game={selectedGame}
+          onClose={() => setShowEdit(false)}
+        />
+      )}
+    </>
   );
 }

@@ -1,33 +1,58 @@
-import { NumberGenerator } from '../utils/BingoCalledNumber/numberGenerator.js';
-import CalledNumbers from "../model/calledNumber.js"; 
-
-const numberGenerator = NumberGenerator();
+import games from "../model/games.js";
+import CalledNumbers from "../model/calledNumber.js";
+import { callNextNumber } from "../services/ballCaller.js";
 
 export const BingoControllerCalledNumber = async (req, res) => {
     try {
         const gameId = req.params.game_id;
+        const result = await callNextNumber(gameId);
 
-        // Verifica si todos los números han sido llamados
-        if (numberGenerator.isGameOver()) {
-            // Si el juego está terminado (todos los números llamados), reinicia los números
-            numberGenerator.resetNumbers();
-            // Elimina todos los registros de números llamados para este juego
-            await CalledNumbers.destroy({ where: { game_id: gameId } });
+        if (result.notFound) {
+            return res.status(404).json({ message: "Game not found" });
+        }
+        if (result.finished) {
+            return res.status(409).json({
+                message: "Game already finished",
+                winner: result.winner,
+                game: result.game,
+            });
+        }
+        if (result.invalidStatus) {
+            return res.status(400).json({
+                message: "No se puede cantar ahora",
+            });
+        }
+        if (result.allCalled) {
+            return res.status(400).json({ message: "All numbers have been called" });
         }
 
-        // Genera el siguiente número
-        const nextNumber = numberGenerator.getNextNumber();
+        res.status(200).json(result.row);
+    } catch (error) {
+        if (error.name === "SequelizeUniqueConstraintError") {
+            return res.status(409).json({ message: "Number already called for this game" });
+        }
+        console.error("Error al llamar o guardar el siguiente número:", error);
+        res.status(500).json({ message: "Algo salió mal. Inténtalo de nuevo." });
+    }
+};
 
-        // Guardar el número llamado en la base de datos
-        const newCalledNumber = await CalledNumbers.create({
-            game_id: gameId,
-            number_called: nextNumber
+export const getCalledNumbersByGame = async (req, res) => {
+    try {
+        const gameId = req.params.game_id;
+
+        const game = await games.findByPk(gameId);
+        if (!game) {
+            return res.status(404).json({ message: "Game not found" });
+        }
+
+        const numbers = await CalledNumbers.findAll({
+            where: { game_id: gameId },
+            order: [["called_at", "ASC"], ["id", "ASC"]],
         });
 
-        // Responder con el número guardado
-        res.status(200).json(newCalledNumber);
+        res.status(200).json(numbers);
     } catch (error) {
-        console.error('Error al llamar o guardar el siguiente número:', error);
-        res.status(500).json({ message: 'No se pudo llamar el siguiente número' });
+        console.error("Error al obtener números llamados:", error);
+        res.status(500).json({ message: "Algo salió mal. Inténtalo de nuevo." });
     }
 };

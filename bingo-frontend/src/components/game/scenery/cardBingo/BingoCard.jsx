@@ -3,27 +3,37 @@ import useBingoCardStore from "../../../../../store/bingoCardStore";
 import useAuthStore from "../../../../../store/authStore";
 import useGameStore from "../../../../../store/gameStore";
 
+const LETTERS = ["B", "I", "N", "G", "O"];
+const HEADER = {
+  B: "bg-[var(--bingo-red)]",
+  I: "bg-[#1f8a5a]",
+  N: "bg-[#1d6fb8]",
+  G: "bg-[var(--bingo-amber)] text-[var(--bingo-ink)]",
+  O: "bg-[#d97706]",
+};
 
-export default function BingoCard() {
+export default function BingoCard({ compact = false }) {
   const { userInfo } = useAuthStore();
-  const { selectedGame, fetchGameById } = useGameStore();
+  const { selectedGame } = useGameStore();
   const {
     generateAndSaveCard,
     selectedCard,
     fetchCardsByUserAndGame,
     updateCardByUserAndGame,
+    loading,
   } = useBingoCardStore();
 
   const [isCardLoaded, setIsCardLoaded] = useState(false);
+  const [reshuffling, setReshuffling] = useState(false);
 
- 
-  // Al cargar el componente, verifica si hay una carta existente o crea una nueva
   useEffect(() => {
     const loadCard = async () => {
       if (userInfo && selectedGame && !isCardLoaded) {
-        const updatedSelectedCard = await fetchCardsByUserAndGame(userInfo.id, selectedGame.id);
-        
-        if (!updatedSelectedCard) {
+        const existing = await fetchCardsByUserAndGame(
+          userInfo.id,
+          selectedGame.id
+        );
+        if (!existing) {
           await generateAndSaveCard(userInfo.id, selectedGame.id);
         }
         setIsCardLoaded(true);
@@ -32,55 +42,94 @@ export default function BingoCard() {
     loadCard();
   }, [userInfo, selectedGame, isCardLoaded]);
 
-  // Manejador para actualizar la carta de bingo
   const handleUpdateCard = async () => {
-
-    console.log(selectedCard)
-
-    if (userInfo && selectedGame && selectedCard) {
-
-      await updateCardByUserAndGame(
-        userInfo.id,
-        selectedGame.id,
-        
-      );
+    if (!userInfo || !selectedGame || !selectedCard) return;
+    setReshuffling(true);
+    try {
+      await updateCardByUserAndGame(userInfo.id, selectedGame.id);
+    } finally {
+      setReshuffling(false);
     }
   };
 
+  const gap = compact ? "gap-1" : "gap-1.5 sm:gap-2";
+  const cellBase = compact
+    ? "flex min-h-0 items-center justify-center rounded-md text-sm font-bold"
+    : "flex aspect-square items-center justify-center rounded-lg text-sm font-bold sm:text-lg";
+
   return (
-    <div className="relative flex flex-col items-center gap-4 p-4">
-      {selectedCard && (
-        <div className="grid grid-cols-5 gap-8 p-6 bg-gray-100 rounded-lg shadow-md">
-          {["B", "I", "N", "G", "O"].map((letter) => (
-            <div key={letter} className="flex flex-col gap-4 items-center">
-              <div className="text-center font-bold text-2xl text-blue-500">
-                {letter}
-              </div>
-              {Array.from({ length: 5 }).map((_, rowIndex) => {
+    <div
+      className={`relative mx-auto w-full max-w-md ${
+        compact ? "flex h-full min-h-0 flex-col" : ""
+      }`}
+    >
+      <div
+        className={`rounded-2xl bg-[var(--bingo-felt-light)] shadow-[6px_6px_0_rgba(6,40,32,0.35)] ${
+          compact ? "flex min-h-0 flex-1 flex-col p-2" : "p-3 sm:p-4"
+        }`}
+      >
+        <div className={`grid grid-cols-5 ${gap} ${compact ? "h-[16%] shrink-0" : "mb-2"}`}>
+          {LETTERS.map((letter) => (
+            <div
+              key={letter}
+              className={`${cellBase} font-bingo text-white ${HEADER[letter]}`}
+            >
+              {letter}
+            </div>
+          ))}
+        </div>
+
+        {loading && !selectedCard ? (
+          <p className="flex flex-1 items-center justify-center py-6 text-center text-sm font-semibold text-white/80">
+            Preparando cartón...
+          </p>
+        ) : selectedCard ? (
+          <div
+            className={`grid grid-cols-5 grid-rows-5 ${gap} ${
+              compact ? "min-h-0 flex-1" : ""
+            }`}
+          >
+            {Array.from({ length: 5 }).flatMap((_, rowIndex) =>
+              LETTERS.map((letter) => {
                 const numbers = selectedCard.numbers[letter] || [];
+                const isFree = letter === "N" && rowIndex === 2;
                 return (
                   <div
                     key={`${letter}-${rowIndex}`}
-                    className="w-16 h-16 flex items-center justify-center bg-white border border-gray-300 text-gray-800 rounded-md shadow-sm text-xl font-semibold"
+                    className={`${cellBase} bg-[#1a2744] text-white`}
                   >
-                    {letter === "N" && rowIndex === 2 ? (
-                      <span></span>
+                    {isFree ? (
+                      <span className="font-bingo text-[0.55rem] text-[var(--bingo-amber)] sm:text-xs">
+                        FREE
+                      </span>
                     ) : (
                       numbers[rowIndex] || ""
                     )}
                   </div>
                 );
-              })}
-            </div>
-          ))}
-        </div>
-      )}
+              })
+            )}
+          </div>
+        ) : (
+          <p className="flex flex-1 items-center justify-center py-6 text-center text-sm text-white/80">
+            No hay cartón todavía.
+          </p>
+        )}
+      </div>
 
       <button
+        type="button"
         onClick={handleUpdateCard}
-        className="absolute -bottom-2 right-2 bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition duration-300 ease-in-out shadow-md focus:outline-none focus:ring-2 focus:ring-blue-300"
+        disabled={reshuffling || !selectedCard}
+        className={`absolute flex items-center justify-center rounded-xl bg-[var(--bingo-red)] font-bingo text-white shadow-[3px_3px_0_#7a1c1c] transition hover:brightness-110 disabled:opacity-50 ${
+          compact
+            ? "-bottom-2 -right-1 h-10 w-10 text-xl"
+            : "-bottom-3 -right-2 h-12 w-12 text-2xl"
+        }`}
+        aria-label="Cambiar cartón"
+        title="Nuevo cartón"
       >
-        +
+        {reshuffling ? "…" : "+"}
       </button>
     </div>
   );

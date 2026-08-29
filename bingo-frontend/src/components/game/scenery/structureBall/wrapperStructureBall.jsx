@@ -1,101 +1,135 @@
-import { useEffect, useState } from 'preact/hooks';
-import useCalledNumbersStore from "../../../../../store/useCalledNumberStore"
-import Ball from './ball';
-import Portal from './portal';
-import TubeBall from './tubeBall';
-import { AnimatePresence, motion } from 'framer-motion';
+import { useEffect, useLayoutEffect, useState, useRef } from "preact/hooks";
+import { AnimatePresence, motion } from "framer-motion";
+import useCalledNumbersStore from "../../../../../store/useCalledNumberStore";
+import { getBingoLetter } from "../../../../utils/bingoStats";
+import BingoBall from "./BingoBall";
+import TubeBall from "./tubeBall";
 
-export default function WrapperStructureBall() {
-    const { nextNumber, fetchNextNumber } = useCalledNumbersStore();
-    const [balls, setBalls] = useState([]);
-    const [isPortalOpen, setIsPortalOpen] = useState(false);
-    const [isBottomPortalOpen, setIsBottomPortalOpen] = useState(false);
-    const [isReordering, setIsReordering] = useState(false);
-    const gameId = 26;
-    const maxBalls = 5;
+const MAX_BALLS = 15;
+const OVERLAP = 0.1;
 
-    // Lógica para llamar a un nuevo número cada 5 segundos
-    useEffect(() => {
-        const interval = setInterval(() => {
-            fetchNextNumber(gameId);
-        }, 5000);
-        return () => clearInterval(interval);
-    }, [fetchNextNumber, gameId]);
+function ballLetter(ball) {
+  return ball?.letter || getBingoLetter(ball?.number) || "B";
+}
 
-    // Actualiza la lista de bolas con animación 
-    useEffect(() => {
-        if (nextNumber) {
-            setIsPortalOpen(true); // Abrir portal superior
-            setBalls((prevBalls) => {
-                const updatedBalls = [nextNumber, ...prevBalls];
-                if (updatedBalls.length > maxBalls) {
-                    updatedBalls.pop();
-                }
-                return updatedBalls;
-            });
+function countFullBalls(el) {
+  if (!el) return 0;
+  const styles = getComputedStyle(el);
+  const height =
+    el.clientHeight -
+    parseFloat(styles.paddingTop) -
+    parseFloat(styles.paddingBottom);
+  const width =
+    el.clientWidth -
+    parseFloat(styles.paddingLeft) -
+    parseFloat(styles.paddingRight);
+  if (width < 8 || height < 8) return 0;
+  const stride = width * (1 - OVERLAP);
+  if (stride <= 0) return 0;
+  if (height < width - 1) return 0;
+  return Math.floor((height - width) / stride) + 1;
+}
 
-            // Cerrar portal superior después de 1 segundo
-            setTimeout(() => setIsPortalOpen(false), 1000);
-        }
-    }, [nextNumber]);
+export default function WrapperStructureBall({ gameId, roundKey }) {
+  const { prepareForGame, calledNumbers } = useCalledNumbersStore();
+  const lastSeenRef = useRef(null);
+  const stackRef = useRef(null);
+  const [animateEnter, setAnimateEnter] = useState(false);
+  const [stemFit, setStemFit] = useState(0);
 
-    // Aplicar efecto de gravedad cuando se elimina una bola (utima bola)
-    const handleRemoveBall = () => {
-        if (balls.length > 0) {
-            setIsBottomPortalOpen(true);
-            setIsReordering(true); // Iniciar animación de reordenamiento para todas las bolas
+  useEffect(() => {
+    if (!gameId) return;
+    prepareForGame(gameId);
+  }, [gameId]);
 
-            setTimeout(() => {
-                setBalls((prevBalls) => prevBalls.slice(0, -1)); // Eliminar la última bola
-                setTimeout(() => {
-                    setIsReordering(false);
-                    setIsBottomPortalOpen(false);
-                }, 500); // Finalizar animación de caída después de 0.5s
-            }, 2500); // Esperar 1 segundo antes de eliminar la bola
-        }
+  useEffect(() => {
+    lastSeenRef.current = null;
+    setAnimateEnter(false);
+  }, [gameId, roundKey]);
+
+  useEffect(() => {
+    const last = calledNumbers[calledNumbers.length - 1];
+    const num = last?.number ?? null;
+    if (num != null && num !== lastSeenRef.current) {
+      setAnimateEnter(lastSeenRef.current != null || calledNumbers.length === 1);
+    } else if (calledNumbers.length === 0) {
+      setAnimateEnter(false);
+    }
+    lastSeenRef.current = num;
+  }, [calledNumbers]);
+
+  useLayoutEffect(() => {
+    const el = stackRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return undefined;
+
+    const measure = () => {
+      setStemFit(countFullBalls(el));
     };
- 
-    // Cada vez que haya 5 bolas, eliminar la última con animación
-       useEffect(() => {
-        if (balls.length === maxBalls) {
-            handleRemoveBall();
-        }
-    }, [balls]);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [roundKey]);
 
-    return (
-        <div className="relative h-full flex flex-col">
-            {/* Portal Superior */}
-            <div>
-                <Portal isOpen={isPortalOpen} />
-            </div>
-            {/* Pelotas dentro del tubo */}
-            <div className="flex flex-col grow w-full h-full justify-end items-center overflow-hidden">
-                <TubeBall />
-                <AnimatePresence>
-                    {balls.map((ball, index) => (
-                        <motion.div
-                            key={ball.number}
-                            initial={{ y: isReordering ? -50 : 0 }}
-                            animate={{ y: 0 }}
-                            exit={{ y: 100, opacity: 0 }} // Animación de caída al salir
-                            transition={{
-                                duration: isReordering ? 0.3 : 0.2,
-                                ease: "easeOut",
-                            }}
-                        >
-                            <Ball
-                                letter={ball.letter}
-                                number={ball.number}
-                                index={index}
-                            />
-                        </motion.div>
-                    ))}
-                </AnimatePresence>
-            </div>
-            {/* Portal Inferior */}
-            <div className="flex items-end">
-                <Portal isOpen={isBottomPortalOpen} />
-            </div>
+  const balls = calledNumbers.slice(-MAX_BALLS).reverse();
+  const latest = balls[0] || null;
+  const stack = balls.slice(1, 1 + Math.max(0, stemFit));
+
+  return (
+    <div className="ball-hopper" aria-label="Bolas cantadas">
+      <div className="ball-hopper__bulb">
+        <TubeBall tone="bulb" />
+        <div className="ball-hopper__current">
+          <AnimatePresence>
+            {latest ? (
+              <motion.div
+                key={latest.number}
+                initial={
+                  animateEnter
+                    ? { y: -36, opacity: 0, scale: 0.7, rotate: -18 }
+                    : false
+                }
+                animate={{ y: 0, opacity: 1, scale: 1, rotate: 0 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                transition={{ type: "spring", stiffness: 240, damping: 16 }}
+              >
+                <BingoBall
+                  letter={ballLetter(latest)}
+                  number={latest.number}
+                  size="fill"
+                />
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
         </div>
-    );
+      </div>
+
+      <div className="ball-hopper__stem">
+        <TubeBall tone="stem" />
+        <div className="ball-hopper__stack" ref={stackRef}>
+          <AnimatePresence initial={false}>
+            {stack.map((ball, index) => (
+              <motion.div
+                key={ball.number}
+                className="ball-hopper__item"
+                style={{ zIndex: stack.length - index }}
+                initial={
+                  animateEnter ? { opacity: 0, y: -16 } : false
+                }
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 32, scale: 0.75 }}
+                transition={{ type: "spring", stiffness: 220, damping: 22 }}
+              >
+                <BingoBall
+                  letter={ballLetter(ball)}
+                  number={ball.number}
+                  size="fill"
+                />
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
+      </div>
+    </div>
+  );
 }

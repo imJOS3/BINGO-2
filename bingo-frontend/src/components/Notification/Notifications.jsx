@@ -8,8 +8,11 @@ const Notifications = ({ isOpen, toggleNotifications }) => {
   useEffect(() => {
     if (!isOpen) return; // Evitar conexiones innecesarias si las notificaciones están cerradas
 
-    // Usar wss:// para conexiones seguras cuando el servidor usa HTTPS
-    const socketUrl = process.env.VITE_API_URL.replace(/^http/, 'wss');
+    const socketUrl = import.meta.env.VITE_API_URL;
+    if (!socketUrl) {
+      console.error('VITE_API_URL no está definida');
+      return;
+    }
     const newSocket = io(socketUrl);
 
     setSocket(newSocket);

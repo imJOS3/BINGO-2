@@ -2,23 +2,431 @@
 @tailwind components;
 @tailwind utilities;
 
-.clock-container {
-    font-family: 'Orbitron', sans-serif;
-    letter-spacing: 0.1em;
-  }
-  
-  .digit {
-    position: relative;
-    color: #ff3b3f; /* Color LED rojo */
-    text-shadow: 
-      0 0 5px rgba(255, 59, 63, 0.6), /* Brillo alrededor */
-      0 0 10px rgba(255, 59, 63, 0.4), /* Más intensidad */
-      0 0 20px rgba(255, 59, 63, 0.2); /* Suavizado final */
-  }
-  @font-face {
-    font-family: 'DS-Digital';
-    src: url('./assets/fonts/opc1/digital-7m.ttf') format('truetype');
-    font-weight: normal;
-    font-style: normal;
+:root {
+  /* Canales RGB sueltos: Tailwind los necesita así para poder aplicar
+     opacidad (text-bingo-felt/55). Con un hex el modificador /NN no compila. */
+  --bingo-felt-rgb: 11 61 50;
+  --bingo-felt-deep-rgb: 6 40 32;
+  --bingo-felt-light-rgb: 20 90 74;
+  --bingo-red-rgb: 226 61 61;
+  --bingo-amber-rgb: 240 180 41;
+  --bingo-ink-rgb: 18 36 31;
+  --bingo-paper-rgb: 243 250 246;
+  --bingo-ticket-rgb: 232 245 239;
+
+  --bingo-felt: rgb(var(--bingo-felt-rgb));
+  --bingo-felt-deep: rgb(var(--bingo-felt-deep-rgb));
+  --bingo-felt-light: rgb(var(--bingo-felt-light-rgb));
+  --bingo-red: rgb(var(--bingo-red-rgb));
+  --bingo-amber: rgb(var(--bingo-amber-rgb));
+  --bingo-ink: rgb(var(--bingo-ink-rgb));
+  --bingo-paper: rgb(var(--bingo-paper-rgb));
+  --bingo-ticket: rgb(var(--bingo-ticket-rgb));
+
+  --font-display: "Bungee", cursive;
+  --font-body: "Karla", sans-serif;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  max-height: 100svh;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+body {
+  font-family: var(--font-body);
+}
+
+/* Los campos van sobre fondos claros pero viven dentro de pantallas con
+   text-white, así que sin color propio heredaban blanco y no se leían.
+   En @layer base cualquier utilidad (text-white) sigue teniendo prioridad. */
+@layer base {
+  input,
+  select,
+  textarea,
+  option {
+    color: var(--bingo-ink);
   }
 
+  input::placeholder,
+  textarea::placeholder {
+    color: rgb(var(--bingo-ink-rgb) / 0.45);
+  }
+}
+
+@layer components {
+  button,
+  a,
+  [role="button"] {
+    transition-duration: 120ms;
+    transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+}
+
+.bingo-card-stage {
+  container-type: size;
+  display: grid;
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  place-items: center;
+  width: 100%;
+}
+
+.bingo-card-fill {
+  height: min(100cqh, calc(100cqw * 1.18));
+  max-height: 100%;
+  max-width: 100%;
+  width: min(100cqw, calc(100cqh * 0.85));
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.font-bingo {
+  font-family: var(--font-display);
+}
+
+.bingo-felt {
+  background:
+    radial-gradient(ellipse 80% 50% at 10% 20%, rgba(240, 180, 41, 0.12), transparent 50%),
+    radial-gradient(ellipse 60% 40% at 90% 80%, rgba(226, 61, 61, 0.1), transparent 45%),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, 0.03) 2px,
+      rgba(0, 0, 0, 0.03) 3px
+    ),
+    linear-gradient(160deg, var(--bingo-felt-light) 0%, var(--bingo-felt) 40%, var(--bingo-felt-deep) 100%);
+}
+
+.bingo-ticket {
+  background:
+    linear-gradient(90deg, #d9efe4 0 12px, transparent 12px),
+    linear-gradient(180deg, var(--bingo-ticket), #dff0e8);
+  border: 2px dashed rgba(11, 61, 50, 0.25);
+}
+
+.clock-container {
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 0.1em;
+}
+
+.digit {
+  position: relative;
+  color: #ff3b3f;
+  text-shadow:
+    0 0 5px rgba(255, 59, 63, 0.6),
+    0 0 10px rgba(255, 59, 63, 0.4),
+    0 0 20px rgba(255, 59, 63, 0.2);
+}
+
+@font-face {
+  font-family: 'DS-Digital';
+  src: url('./assets/fonts/opc1/digital-7m.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+/* —— Bingo ball (casino / professional) —— */
+.bingo-ball {
+  --ball-mid: #e23d3d;
+  --ball-light: #ff7a7a;
+  --ball-dark: #9a1c1c;
+  --ball-ink: #7a1212;
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  border-radius: 50%;
+  isolation: isolate;
+  filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.35));
+}
+
+.bingo-ball--sm {
+  width: 2.75rem;
+  height: 2.75rem;
+}
+
+.bingo-ball--md {
+  width: 5.5rem;
+  height: 5.5rem;
+}
+
+.bingo-ball--lg {
+  width: 6.5rem;
+  height: 6.5rem;
+}
+
+.bingo-ball__glow {
+  position: absolute;
+  inset: -12%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 55%, var(--ball-mid), transparent 68%);
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.4;
+}
+
+.bingo-ball__shell {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.55) 0%, transparent 32%),
+    radial-gradient(circle at 70% 78%, rgba(0, 0, 0, 0.35) 0%, transparent 42%),
+    linear-gradient(145deg, var(--ball-light) 0%, var(--ball-mid) 42%, var(--ball-dark) 100%);
+  box-shadow:
+    inset 0 2px 4px rgba(255, 255, 255, 0.35),
+    inset 0 -6px 12px rgba(0, 0, 0, 0.28);
+  z-index: 1;
+}
+
+.bingo-ball__shine {
+  position: absolute;
+  top: 8%;
+  left: 14%;
+  width: 38%;
+  height: 26%;
+  border-radius: 50%;
+  background: linear-gradient(
+    160deg,
+    rgba(255, 255, 255, 0.85) 0%,
+    rgba(255, 255, 255, 0.15) 55%,
+    transparent 100%
+  );
+  z-index: 3;
+  pointer-events: none;
+  transform: rotate(-18deg);
+}
+
+.bingo-ball__band {
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  top: 50%;
+  height: 42%;
+  transform: translateY(-50%);
+  border-radius: 999px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.92) 0%,
+    #f7f7f4 45%,
+    #e8e6df 100%
+  );
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.9),
+    0 2px 4px rgba(0, 0, 0, 0.18),
+    inset 0 1px 2px rgba(255, 255, 255, 0.8);
+  z-index: 2;
+}
+
+.bingo-ball__badge {
+  position: relative;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  text-align: center;
+  color: var(--ball-ink);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+.bingo-ball__letter {
+  font-family: var(--font-display);
+  font-size: 0.7em;
+  letter-spacing: 0.04em;
+  opacity: 0.92;
+}
+
+.bingo-ball__number {
+  font-family: var(--font-display);
+  font-size: 1.35em;
+  margin-top: 0.05em;
+}
+
+/* Solo letra (p. ej. menú BINGO) */
+.bingo-ball:not(:has(.bingo-ball__number)) .bingo-ball__letter {
+  font-size: 1.05rem;
+}
+
+.bingo-ball--sm:not(:has(.bingo-ball__number)) .bingo-ball__letter {
+  font-size: 0.85rem;
+}
+
+.bingo-ball--sm .bingo-ball__letter {
+  font-size: 0.55rem;
+}
+
+.bingo-ball--sm .bingo-ball__number {
+  font-size: 0.85rem;
+}
+
+.bingo-ball--md .bingo-ball__letter {
+  font-size: 0.72rem;
+}
+
+.bingo-ball--md .bingo-ball__number {
+  font-size: 1.35rem;
+}
+
+.bingo-ball--lg .bingo-ball__letter {
+  font-size: 0.85rem;
+}
+
+.bingo-ball--lg .bingo-ball__number {
+  font-size: 1.65rem;
+}
+
+.bingo-ball__rim {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-shadow:
+    inset 0 0 0 1.5px rgba(255, 255, 255, 0.28),
+    inset 0 0 0 3px rgba(0, 0, 0, 0.12);
+  z-index: 5;
+  pointer-events: none;
+}
+
+/* Bola que llena el ancho del tubo; el texto escala con el tamaño. */
+.bingo-ball--fill {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  container-type: inline-size;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.45));
+}
+
+.bingo-ball--fill .bingo-ball__letter {
+  font-size: 18cqw;
+}
+
+.bingo-ball--fill .bingo-ball__number {
+  font-size: 34cqw;
+  margin-top: 1cqw;
+}
+
+/* —— Tolva de bolas: depósito redondo + tubo de cristal —— */
+.ball-hopper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  min-height: 0;
+}
+
+.ball-hopper__bulb {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  flex-shrink: 0;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 30% 26%, rgba(255, 255, 255, 0.16), transparent 42%),
+    linear-gradient(180deg, rgba(28, 78, 66, 0.4) 0%, rgba(8, 32, 28, 0.55) 100%);
+  box-shadow:
+    0 0 0 1.5px rgba(255, 255, 255, 0.28);
+}
+
+.ball-hopper__current {
+  position: relative;
+  z-index: 1;
+  width: 88%;
+  margin: 6% auto 0;
+}
+
+.ball-hopper__stem {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-height: 0;
+  width: 70%;
+  margin-top: -14%;
+  padding-top: 18%;
+  padding-bottom: 0.7rem;
+  overflow: hidden;
+  border-radius: 0 0 2.4rem 2.4rem;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(28, 78, 66, 0.38) 0%,
+      rgba(8, 32, 28, 0.5) 100%
+    );
+  box-shadow:
+    0 0 0 1.5px rgba(255, 255, 255, 0.22);
+}
+
+.ball-hopper__stack {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0 8% 0.2rem;
+}
+
+.ball-hopper__item {
+  width: 100%;
+  flex: 0 0 auto;
+  margin-top: -10%;
+}
+
+.ball-hopper__item:first-child {
+  margin-top: 0;
+}
+
+.ball-hopper .bingo-ball__glow,
+.ball-hopper .bingo-ball__rim {
+  display: none;
+}
+
+.ball-hopper .bingo-ball--fill {
+  filter: none;
+}
+
+.ball-hopper__sheen {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+.ball-hopper__sheen-top {
+  position: absolute;
+  inset-inline: 18%;
+  top: 8%;
+  height: 18%;
+  border-radius: 50%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), transparent);
+}
+
+.ball-hopper__sheen-left {
+  position: absolute;
+  top: 18%;
+  bottom: 18%;
+  left: 8%;
+  width: 10%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.14), transparent);
+}

@@ -1,7 +1,8 @@
-export default function TubeBall() {
+export default function TubeBall({ tone = "bulb" }) {
   return (
-    <div className="absolute top-0 border border-gray-700 h-full w-full bg-slate-200 bg-opacity-30 backdrop-blur-[0.5px] shadow-lg rounded-lg p-4 z-20 flex flex-col ">
-      <div className="flex h-full flex-col items-center justify-end space-y-2 space-y-reverse"></div>
+    <div className={`ball-hopper__sheen ball-hopper__sheen--${tone}`} aria-hidden="true">
+      {tone === "bulb" ? <span className="ball-hopper__sheen-top" /> : null}
+      <span className="ball-hopper__sheen-left" />
     </div>
   );
 }

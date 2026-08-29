@@ -1,4 +1,4 @@
- export const generateBingoCard = () => {
+export const generateBingoCard = () => {
     const card = {
         B: [],
         I: [],
@@ -21,7 +21,7 @@
     card.G = getRandomNumbers(46, 60, 5);
     card.O = getRandomNumbers(61, 75, 5);
 
-    card.N.splice(2, 0, 'FREE');  // Espacio libre
+    card.N.splice(2, 0, 'FREE');
 
     return card;
 };

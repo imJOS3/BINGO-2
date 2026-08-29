@@ -5,66 +5,78 @@ import Game from './games.js';
 import BingoCards from './bingoCards.js';
 
 const UserGames = db.define('UserGames', {
-    user_id: { 
-        type: DataTypes.INTEGER, 
-        allowNull: false,
-        references: { 
-            model: User, 
-            key: 'id' 
-        }
+    id: {
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true,
     },
-    game_id: { 
-        type: DataTypes.INTEGER, 
+    user_id: {
+        type: DataTypes.INTEGER,
         allowNull: false,
-        references: { 
-            model: Game, 
-            key: 'id' 
-        }
+        references: {
+            model: User,
+            key: 'id',
+        },
     },
-    bingo_card_id: { 
-        type: DataTypes.INTEGER, 
+    game_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        references: {
+            model: Game,
+            key: 'id',
+        },
+    },
+    // En cola: entró con la ronda ya empezada, juega desde la siguiente.
+    is_spectator: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+    },
+    bingo_card_id: {
+        type: DataTypes.INTEGER,
         allowNull: true,
-        references: { 
-            model: BingoCards, 
-            key: 'id' 
-        }
+        references: {
+            model: BingoCards,
+            key: 'id',
+        },
     },
 }, {
     tableName: 'user_games',
     timestamps: false,
+    indexes: [
+        {
+            unique: true,
+            fields: ['user_id', 'game_id'],
+            name: 'user_games_user_game_unique',
+        },
+    ],
 });
 
-// Relación muchos a uno con User
 UserGames.belongsTo(User, {
     foreignKey: 'user_id',
     targetKey: 'id',
 });
 
-// Relación muchos a uno con Game
 UserGames.belongsTo(Game, {
     foreignKey: 'game_id',
     targetKey: 'id',
 });
 
-// Relación muchos a uno con BingoCard
 UserGames.belongsTo(BingoCards, {
     foreignKey: 'bingo_card_id',
     targetKey: 'id',
 });
 
-// Relación inversa en User
 User.hasMany(UserGames, {
     foreignKey: 'user_id',
     sourceKey: 'id',
 });
 
-// Relación inversa en Game
 Game.hasMany(UserGames, {
     foreignKey: 'game_id',
     sourceKey: 'id',
 });
 
-// Relación inversa en BingoCard
 BingoCards.hasMany(UserGames, {
     foreignKey: 'bingo_card_id',
     sourceKey: 'id',

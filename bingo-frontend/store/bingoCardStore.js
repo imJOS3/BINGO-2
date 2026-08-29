@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import axios from 'axios';
+import { toUserMessage } from '../src/utils/userError';
 
 const apiUrl = import.meta.env.VITE_API_URL; // Usar la variable de entorno para la URL base
 
@@ -43,8 +44,10 @@ const useBingoCardStore = create((set) => {
                     saveToLocalStorage(updatedState);
                     return updatedState;
                 });
+                return response.data;
             } catch (error) {
-                set({ loading: false, error: error.message });
+                set({ loading: false, error: toUserMessage(error, "No se pudo crear el cartón") });
+                return null;
             }
          },
 
@@ -53,15 +56,19 @@ const useBingoCardStore = create((set) => {
             set({ loading: true, error: null });
             try {
                 const response = await axios.get(`${apiUrl}/api/cards/${user_id}/${game_id}`);
+                const cards = Array.isArray(response.data) ? response.data : [];
+                const selectedCard = cards.length > 0 ? cards[cards.length - 1] : null;
                 const updatedState = {
-                    cards: response.data,
-                    selectedCard: response.data.length > 0 ? response.data[response.data.length - 1] : null,
+                    cards,
+                    selectedCard,
                     loading: false,
                 };
                 saveToLocalStorage(updatedState);
                 set(updatedState);
+                return selectedCard;
             } catch (error) {
-                set({ loading: false, error: error.message });
+                set({ loading: false, error: toUserMessage(error, "No se pudo cargar el cartón") });
+                return null;
             }
         },
 
@@ -96,7 +103,7 @@ const useBingoCardStore = create((set) => {
                     return updatedState;
                 });
             } catch (error) {
-                set({ loading: false, error: error.message });
+                set({ loading: false, error: toUserMessage(error, "No se pudo actualizar el cartón") });
             }
         },
 
@@ -116,7 +123,38 @@ const useBingoCardStore = create((set) => {
                     return updatedState;
                 });
             } catch (error) {
-                set({ loading: false, error: error.message });
+                set({ loading: false, error: toUserMessage(error, "No se pudo actualizar el cartón") });
+            }
+        },
+
+        /** Guarda fichas marcadas en el servidor */
+        saveMarkedNumbers: async (user_id, game_id, marked_numbers) => {
+            try {
+                const response = await axios.patch(
+                    `${apiUrl}/api/bingo-cards/${user_id}/${game_id}/marks`,
+                    { marked_numbers }
+                );
+                const card = response.data.card;
+                set((state) => {
+                    const updatedState = {
+                        ...state,
+                        cards: state.cards.map((c) =>
+                            c.user_id == user_id && c.game_id == game_id ? card : c
+                        ),
+                        selectedCard:
+                            state.selectedCard &&
+                            state.selectedCard.user_id == user_id &&
+                            state.selectedCard.game_id == game_id
+                                ? card
+                                : state.selectedCard,
+                    };
+                    saveToLocalStorage(updatedState);
+                    return updatedState;
+                });
+                return card;
+            } catch (error) {
+                console.error('Error al guardar fichas marcadas:', error);
+                return null;
             }
         },
     };

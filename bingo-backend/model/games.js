@@ -1,6 +1,7 @@
 import { DataTypes } from 'sequelize';
 import db from '../database/db.js';
 import GameMode from './GameMode.js';
+import User from './Users.js';
 
 const Game = db.define('Game', {
     id: {
@@ -12,6 +13,11 @@ const Game = db.define('Game', {
         type: DataTypes.STRING,
         allowNull: false,
     },
+    room_code: {
+        type: DataTypes.STRING(6),
+        allowNull: true,
+        unique: true,
+    },
     game_status: {
         type: DataTypes.ENUM('active', 'in_progress', 'completed'),
         allowNull: false,
@@ -20,30 +26,64 @@ const Game = db.define('Game', {
     user_count: {
         type: DataTypes.INTEGER,
         allowNull: false,
+        defaultValue: 0,
     },
     creator_id: {
         type: DataTypes.INTEGER,
-        allowNull: false,  
+        allowNull: false,
+        references: {
+            model: 'users',
+            key: 'id',
+        },
     },
     game_mode_id: {
         type: DataTypes.INTEGER,
-        allowNull: true,  
+        allowNull: true,
+        references: {
+            model: 'game_modes',
+            key: 'id',
+        },
     },
     game_time: {
         type: DataTypes.INTEGER,
         allowNull: false,
-        defaultValue: 3, // Tiempo predeterminado de 3 minutos
+        defaultValue: 3,
         validate: {
-            min: 3, // Valor mínimo permitido
-            max: 6, // Valor máximo permitido
+            min: 3,
+            max: 6,
         },
+    },
+    is_public: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: true,
+    },
+    win_pattern: {
+        type: DataTypes.JSON,
+        allowNull: true,
     },
     created_at: {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW,
     },
+    started_at: {
+        type: DataTypes.DATE,
+        allowNull: true,
+    },
     ended_at: {
         type: DataTypes.DATE,
+        allowNull: true,
+    },
+    winner_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+            model: 'users',
+            key: 'id',
+        },
+    },
+    winner_nickname: {
+        type: DataTypes.STRING(20),
         allowNull: true,
     },
 }, {
@@ -52,6 +92,9 @@ const Game = db.define('Game', {
 });
 
 Game.belongsTo(GameMode, { foreignKey: 'game_mode_id' });
+GameMode.hasMany(Game, { foreignKey: 'game_mode_id' });
 
-// Exporta el modelo
+Game.belongsTo(User, { as: 'creator', foreignKey: 'creator_id' });
+Game.belongsTo(User, { as: 'winner', foreignKey: 'winner_id' });
+
 export default Game;

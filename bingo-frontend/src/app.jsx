@@ -9,6 +9,8 @@ import { ProtectedRoute } from "../utils/ProtectedRoute";
 import GameID from "./routes/game/ID/gameID";
 import Playing from "./routes/playing/playing";
 import Games from "./routes/games/games";
+import NotFound from "./routes/NotFound";
+
 
 export function App() {
   const { auth, login, logout, isAuthenticated } = useAuthStore();
@@ -35,9 +37,9 @@ export function App() {
   };
 
   return (
-    <div className="h-screen overflow-x-hidden bg-gradient-to-r from-blue-400 to-teal-400 flex flex-col">
-      {showNavBar && <NavBar isAuthenticated={auth} onLogout={handleLogout} />}
-      <main className="flex-1 mx-auto">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden">
+      {/* {showNavBar && <NavBar isAuthenticated={auth} onLogout={handleLogout} />} */}
+      <main className={`min-h-0 flex-1 overflow-x-hidden ${showNavBar ? "overflow-y-auto" : "overflow-hidden"}`}>
         <Router onChange={handleRouteChange}>
           <Home path="/" />
           <Register path="/login" onLogin={handleLogin} />
@@ -45,6 +47,7 @@ export function App() {
           <ProtectedRoute Component={Games} path="/game" />
           <ProtectedRoute Component={GameID} path="/game/:id" />
           <ProtectedRoute Component={Playing} path="/playing/:id" />
+          <NotFound default />
         </Router>
       </main>
     </div>

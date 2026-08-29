@@ -1,53 +1,81 @@
 import { useState, useEffect } from "preact/hooks";
 import useGameStore from "../../../../../store/gameStore";
 
-export default function Chronometer() {
-  const { selectedGame } = useGameStore(); // Acceder al juego seleccionado desde el store
-  const [seconds, setSeconds] = useState(selectedGame?.game_time * 60 || 0); // Convertir minutos a segundos
+function getRemainingSeconds(game) {
+  if (!game) return 0;
+  const total = (game.game_time || 0) * 60;
+  if (!game.started_at) return total;
+
+  const startedMs = new Date(game.started_at).getTime();
+  if (Number.isNaN(startedMs)) return total;
+
+  const elapsed = Math.floor((Date.now() - startedMs) / 1000);
+  return Math.max(0, total - elapsed);
+}
+
+const formatTime = (time) => {
+  const minutes = String(Math.floor(time / 60)).padStart(2, "0");
+  const secs = String(time % 60).padStart(2, "0");
+  return `${minutes}:${secs}`;
+};
+
+export default function Chronometer({ paused = false }) {
+  const { selectedGame, winner } = useGameStore();
+  const [seconds, setSeconds] = useState(() => getRemainingSeconds(selectedGame));
+  const isPaused = paused || !!winner || selectedGame?.game_status === "completed";
 
   useEffect(() => {
-    // Configurar un intervalo para decrementar los segundos
+    setSeconds(getRemainingSeconds(selectedGame));
+
+    if (isPaused) return;
+
     const interval = setInterval(() => {
-      setSeconds((prev) => {
-        if (prev > 0) {
-          return prev - 1; // Restar un segundo
-        } else {
-          clearInterval(interval); // Detener el cronómetro cuando llegue a 0
-          return 0;
-        }
-      });
+      setSeconds(getRemainingSeconds(selectedGame));
     }, 1000);
 
-    // Limpiar el intervalo al desmontar el componente
     return () => clearInterval(interval);
-  }, []); // Se ejecuta una vez al montar
+  }, [isPaused, selectedGame?.id, selectedGame?.game_time, selectedGame?.started_at]);
 
-  useEffect(() => {
-    // Actualiza los segundos si `selectedGame` cambia
-    if (selectedGame?.game_time !== undefined) {
-      setSeconds(selectedGame.game_time * 60); // Convertir minutos a segundos
-    }
-  }, [selectedGame]);
-
-  const formatTime = (time) => {
-    const minutes = String(Math.floor(time / 60)).padStart(2, "0");
-    const secs = String(time % 60).padStart(2, "0");
-    return `${minutes}:${secs}`;
-  };
+  const totalSeconds = Math.max(1, (selectedGame?.game_time || 0) * 60);
+  const leftPct = Math.max(0, Math.min(100, (seconds / totalSeconds) * 100));
+  const urgent = !isPaused && seconds > 0 && seconds <= 30;
+  const barColor =
+    leftPct > 50
+      ? "bg-[#3ecf8e]"
+      : leftPct > 20
+        ? "bg-[var(--bingo-amber)]"
+        : "bg-[var(--bingo-red)]";
 
   return (
-    <div className="border-black border-2 p-1 rounded relative h-min bg-gray-800">
-      <div className="absolute -top-1 z-10 right-8 bg-red-500 w-[7%] h-[5%]"></div>
-      <div className="clock-container px-6 flex justify-center items-center text-6xl text-red-500 bg-black rounded-lg shadow-lg">
-        <div className="mb-1">
-          <span className="digit font-digital">{formatTime(seconds)}</span>
+    <div
+      className={`flex shrink-0 items-center gap-2.5 whitespace-nowrap sm:gap-3 ${
+        urgent ? "animate-pulse" : ""
+      }`}
+    >
+      <span className="text-sm font-bold uppercase tracking-[0.16em] text-[var(--bingo-amber)] sm:text-base">
+        Termina en
+      </span>
+      <div className="relative rounded-xl border-2 border-black/70 bg-gray-900 p-1 shadow-[0_3px_8px_rgba(0,0,0,0.45)]">
+        <div className="relative flex items-center justify-center overflow-hidden rounded-lg bg-black px-3.5 py-1 sm:px-4 sm:py-1.5">
+          <span
+            aria-hidden="true"
+            className="clock-container absolute inset-0 flex items-center justify-center font-digital text-3xl text-red-500 opacity-10 sm:text-4xl"
+          >
+            88:88
+          </span>
+          <span className="clock-container digit relative z-10 font-digital text-3xl leading-none sm:text-4xl">
+            {formatTime(seconds)}
+          </span>
         </div>
-      </div>
-      <div className="clock-container flex justify-center items-center text-6xl text-red-500 bg-black rounded-lg shadow-lg absolute inset-1 opacity-15">
-        <div>
-          <span className="digit font-digital">88:88</span>
+        <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-white/15">
+          <div
+            className={`h-full rounded-full transition-[width] duration-1000 ease-linear ${barColor}`}
+            style={{ width: `${leftPct}%` }}
+          />
         </div>
       </div>
     </div>
   );
 }
+
+export { getRemainingSeconds };

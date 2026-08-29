@@ -1,121 +1,185 @@
-import { useState, useEffect } from "preact/hooks";
+import { useState, useEffect, useRef } from "preact/hooks";
 import useBingoCardStore from "../../../../../store/bingoCardStore";
-import useCalledNumbersStore from "../../../../../store/useCalledNumberStore"
+import useCalledNumbersStore from "../../../../../store/useCalledNumberStore";
 import useAuthStore from "../../../../../store/authStore";
 import useGameStore from "../../../../../store/gameStore";
+import { checkBingoWin } from "../../../../utils/bingoWin";
 
+const LETTERS = ["B", "I", "N", "G", "O"];
+const HEADER = {
+  B: "bg-[var(--bingo-red)]",
+  I: "bg-[#1f8a5a]",
+  N: "bg-[#1d6fb8]",
+  G: "bg-[var(--bingo-amber)] text-[var(--bingo-ink)]",
+  O: "bg-[#d97706]",
+};
 
-
-export default function BingoCardPlaying() {
-  const { selectedCard, loading } = useBingoCardStore();
-  const {userInfo} =useAuthStore();
-  const {selectedGame} = useGameStore();
+export default function BingoCardPlaying({ gameId }) {
+  const {
+    selectedCard,
+    loading,
+    fetchCardsByUserAndGame,
+    generateAndSaveCard,
+    saveMarkedNumbers,
+  } = useBingoCardStore();
+  const { userInfo } = useAuthStore();
+  const { selectedGame, fetchGameById, claimWin, winner } = useGameStore();
   const { calledNumbers } = useCalledNumbersStore();
   const [selectedNumbers, setSelectedNumbers] = useState({});
   const [animatedNumbers, setAnimatedNumbers] = useState({});
   const [freeSelected, setFreeSelected] = useState(false);
+  const claimingRef = useRef(false);
+  const marksLoadedRef = useRef(false);
 
-  
-    // Al cargar el componente, verifica si hay una carta existente o crea una nueva
-    useEffect(() => {
-      const loadCard = async () => {
-        if (!selectedGame) {
-          await fetchCardsByUserAndGame(userInfo.id, selectedGame.id);
-   
-        }
-      };
-      loadCard();
-    }, [userInfo, selectedGame]);
+  useEffect(() => {
+    setSelectedNumbers({});
+    setFreeSelected(false);
+    setAnimatedNumbers({});
+  }, [gameId, selectedGame?.started_at]);
+
+  useEffect(() => {
+    const loadCard = async () => {
+      if (!userInfo?.id || !gameId) return;
+      if (selectedGame?.game_status === "completed" && marksLoadedRef.current) return;
+
+      marksLoadedRef.current = false;
+      claimingRef.current = false;
+      setAnimatedNumbers({});
+
+      if (!selectedGame || String(selectedGame.id) !== String(gameId)) {
+        await fetchGameById(gameId);
+      }
+
+      let card = await fetchCardsByUserAndGame(userInfo.id, gameId);
+      if (!card) {
+        card = await generateAndSaveCard(userInfo.id, gameId);
+      }
+
+      const marks =
+        card?.marked_numbers && typeof card.marked_numbers === "object"
+          ? card.marked_numbers
+          : {};
+      setSelectedNumbers(marks);
+      setFreeSelected(!!marks.__free);
+      claimingRef.current = false;
+      marksLoadedRef.current = true;
+    };
+    loadCard();
+  }, [
+    userInfo?.id,
+    gameId,
+    selectedGame?.game_status,
+    selectedGame?.game_mode_id,
+    selectedGame?.started_at,
+  ]);
+
+  const persistMarks = (marks) => {
+    if (!userInfo?.id || !gameId || !marksLoadedRef.current) return;
+    saveMarkedNumbers(userInfo.id, gameId, marks);
+  };
+
+  const declareWinner = async () => {
+    if (claimingRef.current || winner || selectedGame?.game_status === "completed")
+      return;
+    if (!userInfo?.id || !gameId) return;
+
+    claimingRef.current = true;
+    try {
+      await claimWin(gameId, userInfo.id, userInfo.nickname);
+      setFreeSelected(true);
+      const marks = { ...selectedNumbers, __free: true };
+      setSelectedNumbers(marks);
+      persistMarks(marks);
+    } catch (error) {
+      console.error("Error al declarar ganador:", error);
+      claimingRef.current = false;
+    }
+  };
 
   const handleNumberClick = (letter, index) => {
+    if (winner || selectedGame?.game_status === "completed") return;
+
     const number = selectedCard.numbers[letter][index];
     const key = `${letter}-${number}`;
 
-    // Marca el número como seleccionado
-    setSelectedNumbers((prev) => ({
-      ...prev,
-      [key]: true,
-    }));
+    setSelectedNumbers((prev) => {
+      const next = { ...prev, [key]: true };
+      persistMarks(next);
+      return next;
+    });
 
-    // Desactiva la animación de ping para el número clicado
     setAnimatedNumbers((prev) => ({
       ...prev,
       [key]: false,
     }));
   };
 
-  // Maneja el clic en la casilla "FREE"
   const handleFreeClick = () => {
     if (!freeSelected) {
       setFreeSelected(true);
-      alert("¡Has ganado! 🎉");
+      declareWinner();
     }
   };
 
-  // Colores para cada letra
-  const letterStyles = {
-    B: "bg-red-600",
-    I: "bg-green-600",
-    N: "bg-blue-600",
-    G: "bg-yellow-600",
-    O: "bg-purple-600",
-  };
-
-  // Verifica si el número ha sido llamado
-  const isNumberCalled = (letter, number) => {
-    return calledNumbers.some(
+  const isNumberCalled = (letter, number) =>
+    calledNumbers.some(
       (called) => called.letter === letter && called.number === number
     );
-  };
 
-  // Activa la animación si el número ha sido llamado y no está seleccionado
   useEffect(() => {
-    if (selectedCard) {
-      const newAnimatedNumbers = { ...animatedNumbers };
-      ["B", "I", "N", "G", "O"].forEach((letter) => {
-        selectedCard.numbers[letter].forEach((number) => {
-          const key = `${letter}-${number}`;
-          if (isNumberCalled(letter, number) && !selectedNumbers[key]) {
-            newAnimatedNumbers[key] = true;
-          }
-        });
+    if (!selectedCard) return;
+    const nextAnim = { ...animatedNumbers };
+    LETTERS.forEach((letter) => {
+      selectedCard.numbers[letter].forEach((number) => {
+        const key = `${letter}-${number}`;
+        if (isNumberCalled(letter, number) && !selectedNumbers[key]) {
+          nextAnim[key] = true;
+        }
       });
-      setAnimatedNumbers(newAnimatedNumbers);
-    }
+    });
+    setAnimatedNumbers(nextAnim);
   }, [calledNumbers, selectedCard, selectedNumbers]);
 
-  // Verifica si todas las casillas están seleccionadas para activar la casilla "FREE"
-  const allNumbersSelected = ["B", "I", "N", "G", "O"].flatMap((letter, colIdx) =>
-    selectedCard?.numbers[letter].map((number, rowIdx) => {
-      const key = `${letter}-${number}`;
-      // Excluye la casilla "FREE" (columna "N" y fila índice 2)
-      return colIdx === 2 && rowIdx === 2 ? true : selectedNumbers[key];
-    })
+  const isBingoComplete = checkBingoWin(
+    selectedCard,
+    selectedNumbers,
+    selectedGame?.game_mode_id,
+    selectedGame?.win_pattern
   );
 
-  const isBingoComplete = allNumbersSelected.every((isSelected) => isSelected);
+  useEffect(() => {
+    if (isBingoComplete && marksLoadedRef.current) {
+      declareWinner();
+    }
+  }, [isBingoComplete, selectedNumbers]);
+
+  if (loading && !selectedCard) {
+    return (
+      <p className="rounded-xl bg-white/10 px-4 py-6 text-center text-sm text-white/75">
+        Cargando cartón...
+      </p>
+    );
+  }
+
+  if (!selectedCard) {
+    return (
+      <p className="rounded-xl bg-white/10 px-4 py-6 text-center text-sm text-white/75">
+        No hay cartón disponible.
+      </p>
+    );
+  }
 
   return (
-    <div className="flex flex-col items-center gap-4 overflow-hidden border border-gray-950 rounded-lg">
-      {loading ? (
-        <div className="text-xl text-gray-600">Cargando carta...</div>
-      ) : selectedCard ? (
-        <div className="grid grid-cols-5 gap-y-6 gap-x-10 px-6 py-4 bg-[#5D9D9F] rounded-lg shadow-md">
-          {/* Fila de letras BINGO */}
-          <div className="col-span-5 flex justify-between py-2 px-1 rounded-md border-gray-950 border bg-gray-100">
-            {["B", "I", "N", "G", "O"].map((letter) => (
+    <div className="bingo-card-stage">
+      <div className="bingo-card-fill">
+        <div className="grid h-full w-full grid-cols-5 gap-1.5 rounded-2xl bg-[var(--bingo-felt-light)] p-2 shadow-[6px_6px_0_rgba(6,40,32,0.35)] sm:gap-2 sm:p-3">
+          {LETTERS.map((letter) => (
+            <div key={letter} className="grid min-h-0 grid-rows-6 gap-1.5 sm:gap-2">
               <div
-                key={letter}
-                className={`text-center font-bold text-3xl text-white w-16 h-16 flex items-center justify-center rounded-full shadow-lg ${letterStyles[letter]} relative overflow-hidden`}
+                className={`flex min-h-0 items-center justify-center rounded-lg font-bingo text-lg text-white sm:text-2xl ${HEADER[letter]}`}
               >
                 {letter}
               </div>
-            ))}
-          </div>
-
-          {/* Números de la carta */}
-          {["B", "I", "N", "G", "O"].map((letter, colIdx) => (
-            <div key={letter} className="flex flex-col gap-4 items-center">
               {Array.from({ length: 5 }).map((_, rowIndex) => {
                 const numbers = selectedCard.numbers[letter] || [];
                 const number = numbers[rowIndex];
@@ -124,53 +188,60 @@ export default function BingoCardPlaying() {
                 const isAnimating = animatedNumbers[key] && !isSelected;
                 const isCalled = isNumberCalled(letter, number);
 
-                // Casilla "FREE"
                 if (letter === "N" && rowIndex === 2) {
                   return (
-                    <div
+                    <button
+                      type="button"
                       key="free-space"
-                      className={`relative w-20 h-16 flex items-center justify-center rounded-md shadow-sm text-xl font-semibold cursor-pointer ${
-                        freeSelected
-                          ? "bg-red-500 text-white"
-                          : "bg-[#2D3248] text-gray-400"
+                      className={`relative flex min-h-0 items-center justify-center rounded-lg text-[0.7rem] font-bingo shadow-inner sm:text-sm ${
+                        freeSelected || isBingoComplete
+                          ? "bg-[var(--bingo-red)] text-white"
+                          : "bg-[#1a2744] text-[var(--bingo-amber)]"
                       }`}
-                      onClick={isBingoComplete ? handleFreeClick : null}
+                      onClick={isBingoComplete ? handleFreeClick : undefined}
                     >
-                      {freeSelected && (
-                        <div className="absolute w-full h-full flex items-center justify-center transition-all duration-300 ease-in-out">
-                          <div className="w-12 h-12 rounded-full bg-red-500"></div>
-                        </div>
+                      {(freeSelected || isBingoComplete) && (
+                        <span className="absolute h-[55%] w-[55%] rounded-full bg-[var(--bingo-red)] ring-2 ring-white/40" />
                       )}
-                      FREE
-                    </div>
+                      <span className="relative z-10">FREE</span>
+                    </button>
                   );
                 }
 
                 return (
-                  <div
+                  <button
+                    type="button"
                     key={`${letter}-${rowIndex}`}
-                    className={`relative w-20 h-16 flex items-center justify-center ${
-                      isCalled ? "cursor-pointer" : "cursor-not-allowed"
-                    } bg-[#2D3248] border border-gray-900 text-white rounded-md shadow-sm text-xl font-semibold transition-transform duration-200 ease-in-out 
-                      ${isCalled ? "hover:scale-105" : ""}`}
-                    onClick={() => isCalled && handleNumberClick(letter, rowIndex)}
+                    disabled={!isCalled || isSelected}
+                    className={`relative flex min-h-0 items-center justify-center rounded-lg bg-[#1a2744] text-lg font-bold text-white shadow-inner transition sm:text-2xl ${
+                      isCalled && !isSelected
+                        ? "cursor-pointer hover:brightness-125"
+                        : "cursor-default"
+                    }`}
+                    onClick={() =>
+                      isCalled && handleNumberClick(letter, rowIndex)
+                    }
                   >
                     {isSelected ? (
-                      <div className="absolute w-full h-full flex items-center justify-center transition-all duration-300 ease-in-out">
-                        <div className="w-12 h-12 rounded-full bg-red-500"></div>
-                      </div>
+                      <span className="absolute h-[58%] w-[58%] rounded-full bg-[var(--bingo-red)] shadow" />
                     ) : (
-                      <span className={`${isAnimating ? "animate-pulse   scale-110 animate-infinite" : ""}`} >{number || ""} </span>
+                      <span
+                        className={
+                          isAnimating
+                            ? "animate-pulse scale-110 text-[var(--bingo-amber)]"
+                            : ""
+                        }
+                      >
+                        {number || ""}
+                      </span>
                     )}
-                  </div>
+                  </button>
                 );
               })}
             </div>
           ))}
         </div>
-      ) : (
-        <div className="text-xl text-gray-600">No hay cartas disponibles.</div>
-      )}
+      </div>
     </div>
   );
 }
