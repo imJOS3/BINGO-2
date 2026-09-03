@@ -104,40 +104,50 @@ export default function FloatWindow() {
                   {loading ? "Entrando..." : "Jugar como invitado"}
                 </button>
 
-                <div className="grid grid-cols-2 gap-2.5">
-                  <button
-                    type="button"
-                    onClick={() => enterAsGuest("/game")}
-                    disabled={loading}
-                    className="rounded-xl border-2 border-bingo-felt/25 bg-white/50 px-3 py-3 text-sm font-bold text-[var(--bingo-felt)] transition hover:bg-white/80 disabled:opacity-60"
-                  >
-                    Buscar mesa
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => enterAsGuest("/game?create=1")}
-                    disabled={loading}
-                    className="rounded-xl border-2 border-bingo-felt/25 bg-white/50 px-3 py-3 text-sm font-bold text-[var(--bingo-felt)] transition hover:bg-white/80 disabled:opacity-60"
-                  >
-                    Crear mesa
-                  </button>
-                </div>
+                <div className="mt-1 flex flex-col gap-2.5">
+                  <div className="flex items-center gap-3">
+                    <span className="h-px flex-1 bg-bingo-felt/15" />
+                    <span className="text-[0.65rem] font-bold uppercase tracking-[0.18em] text-bingo-felt/50">
+                      O con tu cuenta
+                    </span>
+                    <span className="h-px flex-1 bg-bingo-felt/15" />
+                  </div>
 
-                <div className="mt-1 flex flex-col gap-1 text-center text-sm">
-                  <button
-                    type="button"
-                    onClick={() => setView("login")}
-                    className="font-semibold text-[var(--bingo-felt)] underline decoration-[var(--bingo-amber)] underline-offset-4 transition hover:text-[var(--bingo-felt-deep)]"
-                  >
-                    Ya tengo cuenta — Iniciar sesión
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setView("register")}
-                    className="text-bingo-ink/65 transition hover:text-[var(--bingo-felt)]"
-                  >
-                    Crear cuenta (opcional)
-                  </button>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => setView("login")}
+                      className="rounded-xl bg-[var(--bingo-felt)] px-3 py-3 text-sm font-bold text-white shadow-[2px_2px_0_#062820] transition hover:brightness-110"
+                    >
+                      Iniciar sesión
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setView("register")}
+                      className="rounded-xl border-2 border-[var(--bingo-amber)] bg-[var(--bingo-amber)]/15 px-3 py-3 text-sm font-bold text-[var(--bingo-felt)] transition hover:bg-[var(--bingo-amber)]/30"
+                    >
+                      Crear cuenta
+                    </button>
+                  </div>
+                  <p className="mt-1 text-center text-xs text-bingo-ink/55">
+                    Al entrar aceptas los{" "}
+                    <button
+                      type="button"
+                      onClick={() => route("/terms")}
+                      className="underline"
+                    >
+                      Términos
+                    </button>{" "}
+                    y la{" "}
+                    <button
+                      type="button"
+                      onClick={() => route("/privacy")}
+                      className="underline"
+                    >
+                      Privacidad
+                    </button>
+                    .
+                  </p>
                 </div>
               </div>
             </motion.div>

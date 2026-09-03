@@ -369,7 +369,7 @@ body {
       rgba(8, 32, 28, 0.5) 100%
     );
   box-shadow:
-    0 0 0 1.5px rgba(255, 255, 255, 0.22);
+    0 0 0 1.5px rgba(6, 40, 32, 0.55);
 }
 
 .ball-hopper__stack {
@@ -419,14 +419,4 @@ body {
   height: 18%;
   border-radius: 50%;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), transparent);
-}
-
-.ball-hopper__sheen-left {
-  position: absolute;
-  top: 18%;
-  bottom: 18%;
-  left: 8%;
-  width: 10%;
-  border-radius: 999px;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.14), transparent);
 }

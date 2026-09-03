@@ -9,6 +9,10 @@ export default defineConfig({
     port: 5173, // Puedes cambiar el puerto si es necesario
     strictPort: true, // Asegura que siempre use el puerto definido
     historyApiFallback: true, // Asegura el fallback de rutas en modo desarrollo
+    headers: {
+      // Google Sign-In (popup) necesita poder hablar con accounts.google.com
+      "Cross-Origin-Opener-Policy": "same-origin-allow-popups",
+    },
   },
   build: {
     outDir: 'dist', // Directorio de salida para la build de producción

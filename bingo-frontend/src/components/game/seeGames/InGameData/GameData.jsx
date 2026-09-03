@@ -202,6 +202,7 @@ export default function GameData() {
       {showLeaveConfirm && (
         <LeaveConfirmModal
           gameName={selectedGame?.game_name}
+          gameStatus={selectedGame?.game_status || "active"}
           loading={leaving}
           error={leaveError}
           onCancel={() => setShowLeaveConfirm(false)}

@@ -39,6 +39,7 @@ export default function Chronometer({ paused = false }) {
   const totalSeconds = Math.max(1, (selectedGame?.game_time || 0) * 60);
   const leftPct = Math.max(0, Math.min(100, (seconds / totalSeconds) * 100));
   const urgent = !isPaused && seconds > 0 && seconds <= 30;
+  const lastCall = !isPaused && seconds > 0 && seconds <= 60;
   const barColor =
     leftPct > 50
       ? "bg-[#3ecf8e]"
@@ -52,8 +53,12 @@ export default function Chronometer({ paused = false }) {
         urgent ? "animate-pulse" : ""
       }`}
     >
-      <span className="text-sm font-bold uppercase tracking-[0.16em] text-[var(--bingo-amber)] sm:text-base">
-        Termina en
+      <span
+        className={`text-sm font-bold uppercase tracking-[0.16em] sm:text-base ${
+          lastCall ? "text-[var(--bingo-red)]" : "text-[var(--bingo-amber)]"
+        }`}
+      >
+        {lastCall ? "Bingo o nada" : "Termina en"}
       </span>
       <div className="relative rounded-xl border-2 border-black/70 bg-gray-900 p-1 shadow-[0_3px_8px_rgba(0,0,0,0.45)]">
         <div className="relative flex items-center justify-center overflow-hidden rounded-lg bg-black px-3.5 py-1 sm:px-4 sm:py-1.5">

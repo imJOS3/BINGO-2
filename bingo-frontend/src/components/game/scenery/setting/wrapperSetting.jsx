@@ -8,8 +8,7 @@ import useAuthStore from "../../../../../store/authStore";
 import useGameStore from "../../../../../store/gameStore";
 
 export default function WrapperSetting({ isOpen, onClose }) {
-  const [muted, setMuted] = useState(false);
-  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [leavePrompt, setLeavePrompt] = useState(null);
   const [showEdit, setShowEdit] = useState(false);
   const [leaveError, setLeaveError] = useState(null);
   const { leaveGame, loading } = useUsersGame();
@@ -21,21 +20,33 @@ export default function WrapperSetting({ isOpen, onClose }) {
     selectedGame?.creator_id != null &&
     String(userInfo.id) === String(selectedGame.creator_id);
   const canEdit = isHost && selectedGame?.game_status === "active";
+  const gameStatus = selectedGame?.game_status || "active";
 
-  const handleLeave = async () => {
+  const closeLeavePrompt = () => {
+    if (loading) return;
+    setLeaveError(null);
+    setLeavePrompt(null);
+  };
+
+  const exitGame = async (path = "/game") => {
     setLeaveError(null);
     try {
       if (selectedGame?.id && userInfo?.id) {
         await leaveGame(selectedGame.id, userInfo.id);
       }
       clearSelectedGame?.();
-      setShowLeaveConfirm(false);
+      closeLeavePrompt();
       onClose();
-      route("/game");
+      route(path);
     } catch (err) {
       console.error(err);
       setLeaveError("No se pudo salir de la partida. Inténtalo de nuevo.");
     }
+  };
+
+  const openLeavePrompt = (prompt) => {
+    setLeaveError(null);
+    setLeavePrompt(prompt);
   };
 
   const actions = [
@@ -45,10 +56,7 @@ export default function WrapperSetting({ isOpen, onClose }) {
       hint: "Pide confirmación antes de irte",
       tone: "danger",
       keepOpen: true,
-      onClick: () => {
-        setLeaveError(null);
-        setShowLeaveConfirm(true);
-      },
+      onClick: () => openLeavePrompt({ variant: "leave", path: "/game" }),
     },
     ...(canEdit
       ? [
@@ -62,30 +70,28 @@ export default function WrapperSetting({ isOpen, onClose }) {
         ]
       : []),
     {
-      id: "sound",
-      label: muted ? "Activar sonido" : "Silenciar",
-      hint: muted ? "El audio está apagado" : "El audio está encendido",
-      tone: "accent",
-      keepOpen: true,
-      onClick: () => setMuted((v) => !v),
-    },
-    {
       id: "mesas",
       label: "Ver mesas",
-      hint: "Lista de partidas",
-      onClick: () => {
-        onClose();
-        route("/game");
-      },
+      hint: "Saldrás de la partida actual",
+      keepOpen: true,
+      onClick: () =>
+        openLeavePrompt({
+          variant: "navigate",
+          path: "/game",
+          destinationLabel: "Ver mesas",
+        }),
     },
     {
       id: "lobby",
       label: "Lobby",
-      hint: "Pantalla de inicio del juego",
-      onClick: () => {
-        onClose();
-        route("/games");
-      },
+      hint: "Saldrás de la partida actual",
+      keepOpen: true,
+      onClick: () =>
+        openLeavePrompt({
+          variant: "navigate",
+          path: "/games",
+          destinationLabel: "Lobby",
+        }),
     },
   ];
 
@@ -98,13 +104,16 @@ export default function WrapperSetting({ isOpen, onClose }) {
         subtitle="En partida"
         actions={actions}
       />
-      {showLeaveConfirm && (
+      {leavePrompt && (
         <LeaveConfirmModal
           gameName={selectedGame?.game_name}
+          gameStatus={gameStatus}
+          variant={leavePrompt.variant}
+          destinationLabel={leavePrompt.destinationLabel}
           loading={loading}
           error={leaveError}
-          onCancel={() => setShowLeaveConfirm(false)}
-          onConfirm={handleLeave}
+          onCancel={closeLeavePrompt}
+          onConfirm={() => exitGame(leavePrompt.path)}
         />
       )}
       {showEdit && selectedGame && (

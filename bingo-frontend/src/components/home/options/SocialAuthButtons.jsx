@@ -24,7 +24,7 @@ export default function SocialAuthButtons({ onError }) {
   const googleBtnRef = useRef(null);
   const [busy, setBusy] = useState(null);
   const { loginWithGoogle, loading } = useAuthStore();
-  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  const googleClientId = String(import.meta.env.VITE_GOOGLE_CLIENT_ID || "").trim();
 
   useEffect(() => {
     if (!googleClientId || !googleBtnRef.current) return;
@@ -50,6 +50,8 @@ export default function SocialAuthButtons({ onError }) {
           },
           auto_select: false,
           ux_mode: "popup",
+          // Chrome en incógnito + FedCM suele devolver "origin is not allowed"
+          use_fedcm_for_prompt: false,
         });
 
         googleBtnRef.current.innerHTML = "";

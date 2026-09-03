@@ -1,6 +1,6 @@
 import { useState, useEffect } from "preact/hooks";
 import { motion } from "framer-motion";
-import { io } from "socket.io-client";
+import { connectSocket } from "../../../utils/socket";
 import useGameStore from "../../../../store/gameStore";
 import OneGame from "../searchGame/oneGame";
 import BingoBall from "../scenery/structureBall/BingoBall";
@@ -38,7 +38,7 @@ export default function TableGames() {
   useEffect(() => {
     const socketUrl = import.meta.env.VITE_API_URL;
     if (!socketUrl) return;
-    const socket = io(socketUrl);
+    const socket = connectSocket();
     const refresh = () => fetchGames({ silent: true });
 
     socket.on("gameClosed", (payload) => {
@@ -178,7 +178,7 @@ export default function TableGames() {
                     {status.label}
                   </span>
                   <span className="rounded-md bg-bingo-felt/10 px-2 py-0.5 text-[0.65rem] font-bold uppercase tracking-wide text-[var(--bingo-felt)]">
-                    Pública
+                    {game.is_public === false ? "Privada" : "Pública"}
                   </span>
                 </div>
               </div>

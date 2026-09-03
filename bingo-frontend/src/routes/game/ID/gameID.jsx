@@ -5,30 +5,35 @@ import Chat from "../../../components/chat/chat";
 import { ChatIcon, MenuIcon } from "../../../components/game/scenery/gameData/icons";
 import WrapperSetting from "../../../components/game/scenery/setting/wrapperSetting";
 import TableToasts from "../../../components/game/TableToasts";
-import { io } from "socket.io-client";
+import { connectSocket } from "../../../utils/socket";
 import useGameStore from "../../../../store/gameStore";
 import useAuthStore from "../../../../store/authStore";
 import useUsersGame from "../../../../store/usersGame";
+import JoinKeyGate from "../../../components/game/searchGame/JoinKeyGate";
 
-const socket = io(import.meta.env.VITE_API_URL);
+const socket = connectSocket();
 
 export default function GameID({ id }) {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [unreadChat, setUnreadChat] = useState(0);
   const [notifications, setNotifications] = useState([]);
+  const [needsKey, setNeedsKey] = useState(false);
   const { fetchGameById, selectedGame, setSelectedGame } = useGameStore();
   const userId = useAuthStore((s) => s.userInfo?.id);
   const ensureSeat = useUsersGame((s) => s.ensureSeat);
 
   useEffect(() => {
     if (!id) return;
-    fetchGameById(id);
-  }, [id]);
+    fetchGameById(id, userId);
+  }, [id, userId]);
 
   useEffect(() => {
     if (!id || !userId) return;
-    void ensureSeat(id, userId);
+    setNeedsKey(false);
+    void ensureSeat(id, userId).then((data) => {
+      if (!data) setNeedsKey(true);
+    });
   }, [id, userId]);
 
   useEffect(() => {
@@ -87,6 +92,13 @@ export default function GameID({ id }) {
       <div className="relative z-10 min-h-0 flex-1 overflow-x-hidden overflow-y-auto md:overflow-hidden">
         <GameData />
       </div>
+
+      {needsKey && selectedGame?.is_public === false && (
+        <JoinKeyGate
+          game={selectedGame}
+          onJoined={() => setNeedsKey(false)}
+        />
+      )}
 
       <div
         className="pointer-events-none absolute inset-x-0 bottom-0 z-[90] flex items-end justify-between gap-2 px-3"

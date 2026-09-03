@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "preact/hooks";
-import { io } from "socket.io-client";
+import { connectSocket } from "../../utils/socket";
 import useAuthStore from "../../../store/authStore";
 import useGameStore from "../../../store/gameStore";
 import useChatStore from "../../../store/chatStore";
@@ -102,7 +102,7 @@ export default function Chat({ isOpen, toggleChat, gameId, docked = false }) {
       return;
     }
 
-    const newSocket = io(socketUrl);
+    const newSocket = connectSocket();
     setSocket(newSocket);
 
     newSocket.on("chatHistory", (list) => {

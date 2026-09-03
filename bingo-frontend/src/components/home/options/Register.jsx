@@ -76,11 +76,11 @@ export default function Register({ onBack, onSwitchToLogin }) {
 
       <p className="text-center text-xs leading-relaxed text-bingo-ink/65">
         Al continuar aceptas los{" "}
-        <button type="button" onClick={() => window.open("/terms", "_blank")} className="underline">
+        <button type="button" onClick={() => route("/terms")} className="underline">
           Términos
         </button>{" "}
         y la{" "}
-        <button type="button" onClick={() => window.open("/privacy", "_blank")} className="underline">
+        <button type="button" onClick={() => route("/privacy")} className="underline">
           Privacidad
         </button>
         .

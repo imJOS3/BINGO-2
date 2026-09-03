@@ -10,6 +10,8 @@ const useUsersGame = create((set) => ({
     players: [],
     // Mesa en la que estoy en cola (entré con la ronda ya empezada), o null.
     spectatorGameId: null,
+    // Mesa en la que quedé fuera por cantar un bingo falso, o null.
+    eliminatedGameId: null,
     // Cartones de quienes juegan, solo visibles desde la cola.
     tableCards: [],
 
@@ -30,6 +32,8 @@ const useUsersGame = create((set) => ({
     setSpectatorSeat: (gameId) =>
         set(gameId ? { spectatorGameId: gameId } : { spectatorGameId: null, tableCards: [] }),
 
+    setEliminatedSeat: (gameId) => set({ eliminatedGameId: gameId ?? null }),
+
     fetchTableCards: async (gameId, viewerId) => {
         if (!gameId || !viewerId) return [];
         try {
@@ -45,18 +49,26 @@ const useUsersGame = create((set) => ({
         }
     },
 
-    joinGame: async (gameId, userId) => {
+    joinGame: async (gameId, userId, joinKey) => {
         set({ loading: true, error: null });
         try {
-            const response = await axios.post(`${apiUrl}/api/game/${gameId}/join`, { user_id: userId });
+            const response = await axios.post(`${apiUrl}/api/game/${gameId}/join`, {
+                user_id: userId,
+                join_key: joinKey || undefined,
+            });
             const data = response.data;
             set({
                 loading: false,
                 spectatorGameId: data?.spectator ? data.game?.id ?? gameId : null,
+                eliminatedGameId: data?.eliminated ? gameId : null,
             });
             return data;
         } catch (error) {
-            const message = toUserMessage(error, "No se pudo unir a la mesa");
+            const code = error.response?.data?.code;
+            const message =
+                code === "BAD_JOIN_KEY"
+                    ? "La clave no coincide"
+                    : toUserMessage(error, "No se pudo unir a la mesa");
             set({ loading: false, error: message });
             throw new Error(message);
         }
@@ -69,7 +81,10 @@ const useUsersGame = create((set) => ({
         try {
             const response = await axios.post(`${apiUrl}/api/game/${gameId}/join`, { user_id: userId });
             const data = response.data;
-            set({ spectatorGameId: data?.spectator ? data.game?.id ?? gameId : null });
+            set({
+                spectatorGameId: data?.spectator ? data.game?.id ?? gameId : null,
+                eliminatedGameId: data?.eliminated ? gameId : null,
+            });
             return data;
         } catch {
             return null;

@@ -29,10 +29,12 @@ const useGameStore = create(
       },
 
       // Obtener un juego por ID numérico o código de 6 caracteres
-      fetchGameById: async (id) => {
+      fetchGameById: async (id, viewerId) => {
         set({ loading: true, error: null });
         try {
-          const response = await axios.get(`${apiUrl}/api/game/${encodeURIComponent(id)}`);
+          const response = await axios.get(`${apiUrl}/api/game/${encodeURIComponent(id)}`, {
+            params: viewerId ? { user_id: viewerId } : undefined,
+          });
           set({ selectedGame: response.data, loading: false });
         } catch (error) {
           set({
@@ -156,7 +158,8 @@ const useGameStore = create(
         }
       },
 
-      // Declarar ganador y finalizar
+      // Cantar bingo. El servidor decide: si la figura no está, el intento falla
+      // y en el último minuto además deja al jugador fuera de la ronda.
       claimWin: async (gameId, userId, nickname) => {
         set({ loading: true, error: null });
         try {
@@ -171,11 +174,15 @@ const useGameStore = create(
             winner,
             loading: false,
           });
-          return response.data;
+          return { ok: true, winner, game };
         } catch (error) {
-          const message = toUserMessage(error, "No se pudo declarar el bingo");
+          const data = error.response?.data || {};
+          const eliminated = Boolean(data.eliminated);
+          const message = eliminated
+            ? "Bingo falso en el último minuto: quedas fuera del sorteo"
+            : toUserMessage(error, "Todavía no tienes la figura completa");
           set({ loading: false, error: message });
-          throw new Error(message);
+          return { ok: false, eliminated, message };
         }
       },
 

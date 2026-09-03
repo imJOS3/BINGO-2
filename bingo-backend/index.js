@@ -20,9 +20,12 @@ import {
   scheduleStartupSweep,
 } from './services/presence.js';
 import { resumeActiveCallers } from './services/ballCaller.js';
+import { resumeTimeUps } from './services/roundTimer.js';
 import { closeAbandonedGames } from './services/playerRoster.js';
 import cors from 'cors';
+import swaggerUi from 'swagger-ui-express';
 import dotenv from 'dotenv';
+import openapiSpec from './docs/openapi.js';
 
 dotenv.config();
 
@@ -35,23 +38,53 @@ const server = http.createServer(app);
 
 const allowedOrigins = [
   'https://www.bingonline.fun',
+  'https://bingonline.fun',
+  'https://bingo-2-ten.vercel.app',
   'http://localhost:5173',
   'http://127.0.0.1:5173',
 ];
 
+if (process.env.FRONTEND_URL) {
+  allowedOrigins.push(process.env.FRONTEND_URL.replace(/\/$/, ''));
+}
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    const clean = origin.replace(/\/$/, "");
+    callback(null, allowedOrigins.includes(clean));
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+};
+
 const io = new SocketIOServer(server, {
-  cors: { origin: allowedOrigins },
+  cors: corsOptions,
+  transports: ["websocket", "polling"],
   pingInterval: 10000,
   pingTimeout: 8000,
 });
 setIO(io);
 
-app.use(cors({ origin: allowedOrigins }));
+app.use(cors(corsOptions));
 app.use(express.json());
+
+app.get('/api/openapi.json', (_req, res) => {
+  res.json(openapiSpec);
+});
+app.use(
+  '/api/docs',
+  swaggerUi.serve,
+  swaggerUi.setup(openapiSpec, {
+    customSiteTitle: 'Bingonline API',
+    swaggerOptions: { persistAuthorization: true },
+  })
+);
+
 app.use('/api', bingoRoutes);
 
 app.get('/', (req, res) => {
-  res.send('¡Servidor funcionando!');
+  res.send('¡Servidor funcionando! Documentación: /api/docs');
 });
 
 const chatHistoryByGame = new Map();
@@ -196,6 +229,16 @@ const ensureGameColumns = async () => {
       console.warn('Aviso índice room_code:', indexError.message);
     }
   }
+
+  try {
+    await db.query('ALTER TABLE games ADD COLUMN join_key VARCHAR(20) NULL');
+    console.log('Columna games.join_key añadida');
+  } catch (columnError) {
+    const msg = columnError.message || '';
+    if (!msg.includes('Duplicate') && columnError.original?.code !== 'ER_DUP_FIELDNAME') {
+      console.warn('Aviso columna join_key:', columnError.message);
+    }
+  }
 };
 
 const ensureUserGameColumns = async () => {
@@ -208,6 +251,16 @@ const ensureUserGameColumns = async () => {
     const msg = columnError.message || '';
     if (!msg.includes('Duplicate') && columnError.original?.code !== 'ER_DUP_FIELDNAME') {
       console.warn('Aviso columna is_spectator:', columnError.message);
+    }
+  }
+
+  try {
+    await db.query('ALTER TABLE user_games ADD COLUMN eliminated_at DATETIME NULL');
+    console.log('Columna user_games.eliminated_at añadida');
+  } catch (columnError) {
+    const msg = columnError.message || '';
+    if (!msg.includes('Duplicate') && columnError.original?.code !== 'ER_DUP_FIELDNAME') {
+      console.warn('Aviso columna eliminated_at:', columnError.message);
     }
   }
 };
@@ -238,6 +291,7 @@ const initDatabase = async () => {
   await ensureUserGameColumns();
   await seedGameModes();
   await resumeActiveCallers();
+  await resumeTimeUps();
   await closeAbandonedGames();
   await scheduleStartupSweep();
 };

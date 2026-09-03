@@ -1,5 +1,3 @@
-import { useEffect, useState } from "preact/hooks";
-import axios from "axios";
 import useCalledNumbersStore from "../../../../../store/useCalledNumberStore";
 import {
   LETTERS,
@@ -11,27 +9,27 @@ import {
 import { backdropClose } from "../../../../utils/modal";
 import { DockHeader } from "../gameData/SideDrawer";
 
-const apiUrl = import.meta.env.VITE_API_URL;
-
 function StatChip({ label, value, hint }) {
   return (
-    <div className="rounded-xl border border-bingo-felt/10 bg-white/55 px-3 py-2">
-      <p className="text-[0.6rem] font-bold uppercase tracking-wide text-bingo-felt/55">
+    <div className="flex h-full min-h-[5.5rem] flex-col rounded-xl border border-bingo-felt/10 bg-white/55 px-3 py-2">
+      <p className="min-h-[2em] text-[0.6rem] font-bold uppercase leading-tight tracking-wide text-bingo-felt/55">
         {label}
       </p>
-      <p className="font-bingo text-lg leading-none text-[var(--bingo-felt)]">{value}</p>
-      {hint && <p className="mt-0.5 text-[0.65rem] text-bingo-ink/50">{hint}</p>}
+      <p className="mt-auto font-bingo text-lg leading-none text-[var(--bingo-felt)]">
+        {value}
+      </p>
+      <p className="mt-0.5 min-h-[0.85rem] text-[0.65rem] text-bingo-ink/50">
+        {hint || "\u00a0"}
+      </p>
     </div>
   );
 }
 
-function NumberPill({ number, dim = false }) {
+function NumberPill({ number }) {
   const letter = getBingoLetter(number);
   return (
     <span
-      className={`inline-flex h-7 min-w-7 items-center justify-center rounded-full px-1.5 text-xs font-bold text-white ${
-        dim ? "opacity-40" : ""
-      }`}
+      className="inline-flex h-7 min-w-7 items-center justify-center rounded-full px-1.5 text-xs font-bold text-white"
       style={{ background: LETTER_COLORS[letter] }}
     >
       {number}
@@ -42,60 +40,11 @@ function NumberPill({ number, dim = false }) {
 export default function CasinoStats({ onClose, docked = false }) {
   const { calledNumbers } = useCalledNumbersStore();
   const live = buildLiveStats(calledNumbers);
-  const [tab, setTab] = useState("round");
-  const [casino, setCasino] = useState(null);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      setLoading(true);
-      try {
-        const { data } = await axios.get(`${apiUrl}/api/stats`);
-        if (!cancelled) setCasino(data);
-      } catch (error) {
-        console.error("Error al cargar estadísticas:", error);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const maxLetter = Math.max(1, ...LETTERS.map((l) => live.letterCounts[l]));
 
   const body = (
-    <>
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            onClick={() => setTab("round")}
-            className={`rounded-xl px-3 py-2 text-sm font-bold ${
-              tab === "round"
-                ? "bg-[var(--bingo-felt)] text-white"
-                : "bg-white/50 text-[var(--bingo-felt)]"
-            }`}
-          >
-            Esta ronda
-          </button>
-          <button
-            type="button"
-            onClick={() => setTab("casino")}
-            className={`rounded-xl px-3 py-2 text-sm font-bold ${
-              tab === "casino"
-                ? "bg-[var(--bingo-felt)] text-white"
-                : "bg-white/50 text-[var(--bingo-felt)]"
-            }`}
-          >
-            Casino
-          </button>
-        </div>
-
-        {tab === "round" && (
-          <div className="mt-4 space-y-4">
+          <div className="space-y-4">
             <div className="grid grid-cols-2 gap-2">
               <StatChip label="Salidas" value={`${live.total}/75`} />
               <StatChip label="Quedan" value={live.remaining} />
@@ -207,118 +156,6 @@ export default function CasinoStats({ onClose, docked = false }) {
               </div>
             </div>
           </div>
-        )}
-
-        {tab === "casino" && (
-          <div className="mt-4 space-y-4">
-            {loading && !casino && (
-              <p className="text-sm text-bingo-ink/60">Cargando histórico...</p>
-            )}
-            {casino && (
-              <>
-                <div className="grid grid-cols-3 gap-2">
-                  <StatChip label="Bolas históricas" value={casino.totalDraws || 0} />
-                  <StatChip label="Mesas" value={casino.gamesPlayed || 0} />
-                  <StatChip label="Finalizadas" value={casino.gamesCompleted || 0} />
-                </div>
-
-                <div>
-                  <p className="mb-2 text-[0.65rem] font-bold uppercase tracking-wide text-bingo-felt/55">
-                    Letras más calientes
-                  </p>
-                  <div className="flex gap-1">
-                    {LETTERS.map((letter) => (
-                      <div
-                        key={letter}
-                        className="flex flex-1 flex-col items-center rounded-lg px-1 py-2 text-white"
-                        style={{ background: LETTER_COLORS[letter] }}
-                      >
-                        <span className="font-bingo text-sm">{letter}</span>
-                        <span className="text-[0.65rem] font-bold">
-                          {casino.letterCounts?.[letter] || 0}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <p className="mb-2 text-[0.65rem] font-bold uppercase tracking-wide text-bingo-felt/55">
-                    Números más seguidos
-                  </p>
-                  <div className="space-y-1.5">
-                    {(casino.hotNumbers || []).length ? (
-                      casino.hotNumbers.map((item, i) => (
-                        <div
-                          key={item.number}
-                          className="flex items-center justify-between rounded-xl bg-white/55 px-3 py-2"
-                        >
-                          <span className="flex items-center gap-2">
-                            <span className="w-4 text-xs font-bold text-bingo-felt/45">
-                              {i + 1}
-                            </span>
-                            <NumberPill number={item.number} />
-                          </span>
-                          <span className="text-sm font-bold text-[var(--bingo-felt)]">
-                            {item.times} veces
-                          </span>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-sm text-bingo-ink/55">
-                        Aún no hay historial de bolas.
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <p className="mb-2 text-[0.65rem] font-bold uppercase tracking-wide text-bingo-felt/55">
-                    Números fríos
-                  </p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {(casino.coldNumbers || []).map((item) => (
-                      <span key={item.number} className="flex items-center gap-1">
-                        <NumberPill number={item.number} dim={item.times === 0} />
-                        <span className="text-[0.65rem] text-bingo-ink/45">
-                          {item.times}
-                        </span>
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <p className="mb-2 text-[0.65rem] font-bold uppercase tracking-wide text-bingo-felt/55">
-                    Ganadores
-                  </p>
-                  {(casino.topWinners || []).length ? (
-                    <ul className="space-y-1.5">
-                      {casino.topWinners.map((row) => (
-                        <li
-                          key={row.nickname}
-                          className="flex items-center justify-between rounded-xl bg-white/55 px-3 py-2"
-                        >
-                          <span className="font-semibold text-[var(--bingo-ink)]">
-                            {row.nickname}
-                          </span>
-                          <span className="font-bingo text-sm text-[var(--bingo-felt)]">
-                            {row.wins} bingo{Number(row.wins) === 1 ? "" : "s"}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="text-sm text-bingo-ink/55">
-                      Todavía no hay ganadores registrados.
-                    </p>
-                  )}
-                </div>
-              </>
-            )}
-          </div>
-        )}
-    </>
   );
 
   if (docked) {

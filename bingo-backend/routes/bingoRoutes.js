@@ -29,7 +29,6 @@ import {
     BingoControllerCalledNumber,
     getCalledNumbersByGame,
 } from '../controller/bingoControllerCalledNumber.js';
-import { getCasinoStats } from '../controller/bingoStatsController.js';
 
 const router = express.Router();
 
@@ -40,7 +39,6 @@ router.post('/auth/guest', GuestAuth);
 router.post('/auth/google', GoogleAuth);
 
 // Lecturas públicas / con auth opcional
-router.get('/stats', getCasinoStats);
 router.get('/game', getAllGames);
 router.get('/game/search', searchGames);
 router.get('/game/:id', getGameById);

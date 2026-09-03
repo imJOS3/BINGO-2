@@ -38,13 +38,13 @@ export default function FormSearchGame() {
       >
         <div className="flex flex-1 flex-col justify-center">
           <label className="font-bingo text-[0.65rem] tracking-wide text-[var(--bingo-felt)]">
-            Nombre, código o ID
+            Nombre o código
           </label>
           <input
             type="text"
             value={query}
             onInput={(e) => setQuery(e.target.value)}
-            placeholder="Ej: K7M2PQ, 12 o Noche bingo"
+            placeholder="Ej: K7M2PQ o Noche bingo"
             className="w-full bg-transparent text-lg font-semibold uppercase tracking-wide text-[var(--bingo-ink)] outline-none placeholder:normal-case placeholder:tracking-normal placeholder:text-bingo-felt/40"
           />
         </div>
@@ -67,7 +67,7 @@ export default function FormSearchGame() {
       )}
       {searched && !loading && !error && results.length === 0 && (
         <p className="mt-3 text-center text-sm text-[var(--bingo-amber)]">
-          No hay mesas con ese nombre, código o ID
+          No hay mesas con ese nombre o código
         </p>
       )}
 

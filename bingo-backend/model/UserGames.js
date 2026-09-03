@@ -32,6 +32,11 @@ const UserGames = db.define('UserGames', {
         allowNull: false,
         defaultValue: false,
     },
+    // Fuera de la ronda por cantar un bingo falso en el último minuto.
+    eliminated_at: {
+        type: DataTypes.DATE,
+        allowNull: true,
+    },
     bingo_card_id: {
         type: DataTypes.INTEGER,
         allowNull: true,

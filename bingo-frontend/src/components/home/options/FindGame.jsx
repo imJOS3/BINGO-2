@@ -9,6 +9,7 @@ const fieldClass =
 
 export default function FindGame({ onBack }) {
   const [query, setQuery] = useState("");
+  const [joinKey, setJoinKey] = useState("");
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const { searchGames, setSelectedGame } = useGameStore();
@@ -19,7 +20,7 @@ export default function FindGame({ onBack }) {
     e.preventDefault();
     const value = query.trim();
     if (!value) {
-      setError("Escribe un nombre, código o ID");
+      setError("Escribe un nombre o código");
       return;
     }
 
@@ -33,9 +34,18 @@ export default function FindGame({ onBack }) {
       }
 
       const game = found[0];
+      const isHost =
+        userInfo?.id != null &&
+        game.creator_id != null &&
+        String(userInfo.id) === String(game.creator_id);
+      if (game.is_public === false && !isHost && !joinKey.trim()) {
+        setError("Esta mesa es privada. Escribe la clave.");
+        return;
+      }
+
       setSelectedGame(game);
       if (userInfo?.id) {
-        await joinGame(game.id, userInfo.id);
+        await joinGame(game.id, userInfo.id, joinKey.trim());
       }
       if (game.game_status === "in_progress") {
         route(`/playing/${game.id}`);
@@ -43,7 +53,7 @@ export default function FindGame({ onBack }) {
         route(`/game/${game.id}`);
       }
     } catch (err) {
-      setError("No se pudo buscar la mesa");
+      setError(err.message || "No se pudo buscar la mesa");
     } finally {
       setLoading(false);
     }
@@ -54,17 +64,25 @@ export default function FindGame({ onBack }) {
       <div>
         <h2 className="font-bingo text-2xl text-[var(--bingo-felt)] sm:text-3xl">Buscar mesa</h2>
         <p className="mt-1 text-sm text-bingo-ink/70">
-          Usa el nombre, el código de 6 caracteres o el ID.
+          Usa el nombre o el código. Si es privada, también la clave del host.
         </p>
       </div>
 
       <form onSubmit={handleJoinRoom} className="flex flex-col gap-3">
         <input
           type="text"
-          placeholder="Código, nombre o ID"
+          placeholder="Código o nombre"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           required
+          disabled={loading}
+          className={fieldClass}
+        />
+        <input
+          type="text"
+          placeholder="Clave (solo mesas privadas)"
+          value={joinKey}
+          onChange={(e) => setJoinKey(e.target.value)}
           disabled={loading}
           className={fieldClass}
         />

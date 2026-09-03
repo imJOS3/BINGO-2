@@ -6,6 +6,8 @@ import BingoCards from "../model/bingoCards.js";
 import db from "../database/db.js";
 import { getIO } from "../socket.js";
 import { restartBallCaller, startBallCaller, stopBallCaller } from "../services/ballCaller.js";
+import { cancelTimeUp, isLastCall, scheduleTimeUp } from "../services/roundTimer.js";
+import { hasBingo, patternCells } from "../utils/bingoCard/winPattern.js";
 import { closeAbandonedGames, promoteSpectators } from "../services/playerRoster.js";
 import { onlineCount } from "../services/presence.js";
 import { Op } from "sequelize";
@@ -14,6 +16,7 @@ import {
     isRoomCodeShape,
     normalizeRoomCode,
 } from "../utils/roomCode.js";
+import { asPublic, resolveJoinKey, toClientGame } from "../utils/gamePublic.js";
 
 const sameId = (a, b) => Number(a) === Number(b);
 
@@ -88,7 +91,7 @@ const resolveModeAndPattern = (game_mode_id, win_pattern, fallbackMode, fallback
 };
 
 export const createGame = async (req, res) => {
-    const { game_name, game_time, game_status, game_mode_id, is_public, win_pattern } = req.body;
+    const { game_name, game_time, game_status, game_mode_id, is_public, join_key, win_pattern } = req.body;
     const creator_id = req.userId || req.body.creator_id;
 
     try {
@@ -112,6 +115,16 @@ export const createGame = async (req, res) => {
             return res.status(patternError.statusCode || 400).json({ message: patternError.message });
         }
 
+        const isPublicGame = asPublic(is_public);
+        let joinKey = null;
+        if (!isPublicGame) {
+            try {
+                joinKey = resolveJoinKey(join_key);
+            } catch (keyError) {
+                return res.status(keyError.statusCode || 400).json({ message: keyError.message });
+            }
+        }
+
         const result = await db.transaction(async (t) => {
             const newGame = await games.create({
                 game_name,
@@ -119,7 +132,8 @@ export const createGame = async (req, res) => {
                 game_time: game_time || 3,
                 game_status: game_status || "active",
                 game_mode_id: resolved.modeId,
-                is_public: is_public === false || is_public === "false" || is_public === 0 ? false : true,
+                is_public: isPublicGame,
+                join_key: joinKey,
                 win_pattern: resolved.pattern,
                 creator_id,
                 user_count: 1,
@@ -134,14 +148,14 @@ export const createGame = async (req, res) => {
         });
 
         const io = getIO();
-        if (io && result.is_public) {
+        if (io) {
             io.emit("gameCreated", {
                 gameId: result.id,
-                game: result.get({ plain: true }),
+                game: toClientGame(result),
             });
         }
 
-        res.status(201).json(result);
+        res.status(201).json(toClientGame(result, { includeKey: true }));
     } catch (error) {
         console.error("Error creating game:", error.message);
         res.status(500).json({ message: "Algo salió mal. Inténtalo de nuevo." });
@@ -155,7 +169,7 @@ const FRESH_GAME_MS = 45000;
 const withOnlinePlayers = (rows) =>
     rows
         .map((game) => {
-            const json = game.get({ plain: true });
+            const json = toClientGame(game);
             json.online_count = onlineCount(game.id);
             return json;
         })
@@ -184,7 +198,6 @@ export const getAllGames = async (req, res) => {
         await sweepIfStale();
         const allGames = await games.findAll({
             where: {
-                is_public: true,
                 game_status: { [Op.in]: ["active", "in_progress"] },
                 user_count: { [Op.gt]: 0 },
             },
@@ -204,7 +217,9 @@ export const getGameById = async (req, res) => {
         if (!game) {
             return res.status(404).json({ message: "Game not found" });
         }
-        res.status(200).json(game);
+        res.status(200).json(
+            toClientGame(game, { viewerId: req.userId || req.query.user_id })
+        );
     } catch (error) {
         res.status(500).json({ message: "Algo salió mal. Inténtalo de nuevo." });
     }
@@ -215,16 +230,13 @@ export const searchGames = async (req, res) => {
 
     try {
         if (!q) {
-            return res.status(400).json({ message: "Escribe un nombre, código o ID" });
+            return res.status(400).json({ message: "Escribe un nombre o código" });
         }
 
         const filters = [];
         const code = normalizeRoomCode(q);
         if (isRoomCodeShape(code)) {
             filters.push({ room_code: code });
-        }
-        if (/^\d+$/.test(q)) {
-            filters.push({ id: Number(q) });
         }
 
         const nameQuery = q.replace(/[%_]/g, "").slice(0, 80);
@@ -258,7 +270,7 @@ export const searchGames = async (req, res) => {
 
 export const updateGame = async (req, res) => {
     const { id } = req.params;
-    const { game_name, game_time, game_mode_id, is_public, win_pattern } = req.body;
+    const { game_name, game_time, game_mode_id, is_public, join_key, win_pattern } = req.body;
     const creator_id = req.userId || req.body.creator_id;
 
     try {
@@ -294,9 +306,19 @@ export const updateGame = async (req, res) => {
         }
 
         if (is_public !== undefined) {
-            game.is_public = !(
-                is_public === false || is_public === "false" || is_public === 0
-            );
+            game.is_public = asPublic(is_public);
+        }
+
+        if (game.is_public) {
+            game.join_key = null;
+        } else if (join_key !== undefined || !game.join_key) {
+            try {
+                game.join_key = resolveJoinKey(join_key);
+            } catch (keyError) {
+                return res.status(keyError.statusCode || 400).json({
+                    message: keyError.message,
+                });
+            }
         }
 
         if (game_mode_id !== undefined || win_pattern !== undefined) {
@@ -320,10 +342,10 @@ export const updateGame = async (req, res) => {
 
         const io = getIO();
         if (io) {
-            io.emit("gameUpdated", { gameId: game.id, game });
+            io.emit("gameUpdated", { gameId: game.id, game: toClientGame(game) });
         }
 
-        res.status(200).json(game);
+        res.status(200).json(toClientGame(game, { includeKey: true }));
     } catch (error) {
         res.status(500).json({ message: "Algo salió mal. Inténtalo de nuevo." });
     }
@@ -349,18 +371,24 @@ export const startGame = async (req, res) => {
 
         if (game.game_status === "in_progress") {
             startBallCaller(game.id);
+            scheduleTimeUp(game);
             return res.status(200).json({ message: "Game already in progress", game });
         }
 
         const promoted = await promoteSpectators(game.id);
+        await UserGames.update(
+            { eliminated_at: null },
+            { where: { game_id: game.id } }
+        );
 
         game.game_status = "in_progress";
         if (!game.started_at) {
             game.started_at = new Date();
         }
         await game.save();
+        scheduleTimeUp(game);
 
-        const gamePayload = game.get({ plain: true });
+        const gamePayload = toClientGame(game);
         const io = getIO();
         if (io) {
             io.emit("gameStarted", {
@@ -372,7 +400,10 @@ export const startGame = async (req, res) => {
 
         startBallCaller(game.id);
 
-        res.status(200).json({ message: "Game started successfully", game: gamePayload });
+        res.status(200).json({
+            message: "Game started successfully",
+            game: toClientGame(game, { includeKey: true }),
+        });
     } catch (error) {
         res.status(500).json({ message: "Algo salió mal. Inténtalo de nuevo." });
     }
@@ -398,6 +429,7 @@ export const finalizeGame = async (req, res) => {
         }
         await game.save();
         stopBallCaller(game.id);
+        cancelTimeUp(game.id);
 
         res.status(200).json({ message: "Game has been finalized", game });
     } catch (error) {
@@ -421,6 +453,10 @@ export const activateGame = async (req, res) => {
 
         await db.transaction(async (t) => {
             await CalledNumbers.destroy({ where: { game_id: id }, transaction: t });
+            await UserGames.update(
+                { eliminated_at: null },
+                { where: { game_id: id }, transaction: t }
+            );
 
             game.game_status = "active";
             game.winner_id = null;
@@ -431,6 +467,7 @@ export const activateGame = async (req, res) => {
         });
 
         stopBallCaller(id);
+        cancelTimeUp(id);
         await promoteSpectators(game.id);
 
         res.status(200).json({ message: "Game has been reactivated", game });
@@ -495,13 +532,19 @@ export const restartGame = async (req, res) => {
                 );
             }
 
+            await UserGames.update(
+                { eliminated_at: null },
+                { where: { game_id: id }, transaction: t }
+            );
+
             game.game_mode_id = resolved.modeId;
             game.win_pattern = resolved.pattern;
             game.winner_id = null;
             game.winner_nickname = null;
             game.ended_at = null;
             game.game_status = "in_progress";
-            game.started_at = keepBalls ? (game.started_at || new Date()) : new Date();
+            // Ronda nueva, reloj nuevo: si no, el tiempo agotado la cerraría al instante.
+            game.started_at = new Date();
             await game.save({ transaction: t });
         });
 
@@ -512,7 +555,7 @@ export const restartGame = async (req, res) => {
 
         const payload = {
             gameId: game.id,
-            game,
+            game: toClientGame(game),
             resetNumbers: !keepBalls,
             promoted,
         };
@@ -524,6 +567,7 @@ export const restartGame = async (req, res) => {
 
         if (!keepBalls) restartBallCaller(game.id);
         else startBallCaller(game.id);
+        scheduleTimeUp(game);
 
         res.status(200).json({
             message: keepBalls ? "Siguiente figura" : "Nueva ronda",
@@ -580,6 +624,30 @@ export const claimWin = async (req, res) => {
             if (membership.is_spectator) {
                 return { spectatorWaiting: true };
             }
+            if (membership.eliminated_at) {
+                return { eliminated: true, alreadyOut: true };
+            }
+
+            const card = await BingoCards.findOne({
+                where: { game_id: id, user_id },
+                transaction: t,
+            });
+            const called = await CalledNumbers.findAll({
+                where: { game_id: id },
+                attributes: ["number_called"],
+                transaction: t,
+            });
+            const calledSet = new Set(called.map((row) => Number(row.number_called)));
+            const cells = patternCells(game.game_mode_id, game.win_pattern);
+
+            if (!hasBingo(card?.numbers, calledSet, cells)) {
+                const lastCall = isLastCall(game);
+                if (lastCall) {
+                    membership.eliminated_at = new Date();
+                    await membership.save({ transaction: t });
+                }
+                return { falseBingo: true, eliminated: lastCall, game };
+            }
 
             let winnerNickname = nickname;
             if (!winnerNickname) {
@@ -611,6 +679,32 @@ export const claimWin = async (req, res) => {
                 message: "Estás en cola: podrás cantar bingo en la próxima ronda",
             });
         }
+        if (result.alreadyOut) {
+            return res.status(403).json({
+                eliminated: true,
+                message: "Cantaste un bingo falso: estás fuera de esta ronda",
+            });
+        }
+        if (result.falseBingo) {
+            if (result.eliminated) {
+                const user = await User.findByPk(user_id);
+                const io = getIO();
+                if (io) {
+                    io.emit("playerEliminated", {
+                        gameId: Number(result.game.id),
+                        userId: Number(user_id),
+                        nickname: nickname || user?.nickname || "Un jugador",
+                    });
+                }
+            }
+
+            return res.status(400).json({
+                eliminated: result.eliminated,
+                message: result.eliminated
+                    ? "Bingo falso en el último minuto: quedas fuera del sorteo"
+                    : "Todavía no tienes la figura. En el último minuto, fallar te elimina",
+            });
+        }
         if (result.invalidStatus) {
             return res.status(400).json({ message: "La partida no está en juego" });
         }
@@ -623,6 +717,7 @@ export const claimWin = async (req, res) => {
 
         if (!result.alreadyFinished) {
             stopBallCaller(result.game.id);
+            cancelTimeUp(result.game.id);
             const io = getIO();
             if (io) {
                 io.emit("gameWon", payload);

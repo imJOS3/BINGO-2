@@ -1,4 +1,5 @@
 import useGameStore from "../../../../../store/gameStore";
+import useAuthStore from "../../../../../store/authStore";
 import usePresenceStore from "../../../../../store/presenceStore";
 import GameMode from "../../scenery/gameData/gameMode";
 
@@ -10,6 +11,7 @@ const STATUS_LABEL = {
 
 export default function TableGameData() {
   const { selectedGame } = useGameStore();
+  const { userInfo } = useAuthStore();
   const onlineCount = usePresenceStore((s) => s.onlineCount);
 
   if (!selectedGame) {
@@ -21,6 +23,10 @@ export default function TableGameData() {
   }
 
   const isPublic = selectedGame.is_public !== false;
+  const isHost =
+    userInfo?.id != null &&
+    selectedGame.creator_id != null &&
+    String(userInfo.id) === String(selectedGame.creator_id);
 
   const copyCode = async () => {
     if (!selectedGame.room_code) return;
@@ -45,6 +51,9 @@ export default function TableGameData() {
       label: "Visibilidad",
       value: isPublic ? "Pública" : "Privada",
     },
+    ...(!isPublic && isHost && selectedGame.join_key
+      ? [{ label: "Clave", value: selectedGame.join_key }]
+      : []),
     {
       label: "Jugadores",
       value: Math.max(onlineCount, 1),

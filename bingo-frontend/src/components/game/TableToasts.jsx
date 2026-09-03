@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "preact/hooks";
 import { AnimatePresence, motion } from "framer-motion";
-import { io } from "socket.io-client";
+import { connectSocket } from "../../utils/socket";
 import BingoBall from "./scenery/structureBall/BingoBall";
 import useAuthStore from "../../../store/authStore";
 import useGameStore from "../../../store/gameStore";
@@ -94,11 +94,7 @@ export default function TableToasts({
     const socketUrl = import.meta.env.VITE_API_URL;
     if (!socketUrl || !gameId) return;
 
-    const socket = io(socketUrl, {
-      reconnection: true,
-      reconnectionAttempts: Infinity,
-      reconnectionDelay: 800,
-    });
+    const socket = connectSocket();
 
     const announcePresence = () => {
       socket.emit("joinGameChat", gameId);
@@ -181,6 +177,21 @@ export default function TableToasts({
       });
     });
 
+    socket.on("playerEliminated", (payload) => {
+      if (String(payload?.gameId) !== String(gameId)) return;
+      if (isSameUser(payload.userId, userInfo?.id)) return;
+      pushToast({
+        id: `elim-${payload.userId}-${Date.now()}`,
+        kind: "leave",
+        nickname: payload.nickname || "Un jugador",
+        line: "cantó bingo falso y quedó fuera del sorteo",
+        letter: letterFromName(payload.nickname),
+        number: ballNumber(payload.nickname),
+        title: "Bingo o nada",
+        accent: "red",
+      });
+    });
+
     socket.on("playerPresence", (payload) => {
       if (!payload) return;
       if (payload.gameId && String(payload.gameId) !== String(gameId)) return;
@@ -242,6 +253,7 @@ export default function TableToasts({
       socket.off("disconnect");
       socket.off("playerJoined");
       socket.off("playerLeft");
+      socket.off("playerEliminated");
       socket.off("playerPresence");
       socket.off("chatHistory");
       socket.off("chatMessage");

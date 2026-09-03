@@ -19,6 +19,12 @@ export default function OneGame({ game, onClose }) {
   const { setSelectedGame } = useGameStore();
   const [joining, setJoining] = useState(false);
   const [joinError, setJoinError] = useState(null);
+  const [joinKey, setJoinKey] = useState("");
+  const isPrivate = game.is_public === false;
+  const isHost =
+    userInfo?.id != null &&
+    game.creator_id != null &&
+    String(userInfo.id) === String(game.creator_id);
 
   const handleGame = async () => {
     if (joining) return;
@@ -32,10 +38,14 @@ export default function OneGame({ game, onClose }) {
       setJoinError("Esta mesa ya no está disponible.");
       return;
     }
+    if (isPrivate && !isHost && !joinKey.trim()) {
+      setJoinError("Escribe la clave de esta mesa privada");
+      return;
+    }
     setJoinError(null);
     setJoining(true);
     try {
-      const joined = await joinGame(game.id, userInfo.id);
+      const joined = await joinGame(game.id, userInfo.id, joinKey.trim());
       const table = joined?.game || game;
       setSelectedGame(table);
       if (table.game_status === "in_progress") {
@@ -46,7 +56,7 @@ export default function OneGame({ game, onClose }) {
     } catch (error) {
       console.log(error);
       setJoining(false);
-      setJoinError("No se pudo unir a la mesa. Inténtalo de nuevo.");
+      setJoinError(error.message || "No se pudo unir a la mesa. Inténtalo de nuevo.");
     }
   };
 
@@ -85,7 +95,7 @@ export default function OneGame({ game, onClose }) {
           </p>
           <p>
             <span className="font-semibold text-[var(--bingo-felt)]">Visibilidad:</span>{" "}
-            {game.is_public === false ? "Privada" : "Pública"}
+            {isPrivate ? "Privada" : "Pública"}
           </p>
           <p>
             <span className="font-semibold text-[var(--bingo-felt)]">Estado:</span>{" "}
@@ -108,6 +118,25 @@ export default function OneGame({ game, onClose }) {
             {game.online_count ?? game.user_count ?? 0}
           </p>
         </div>
+
+        {isPrivate && !isHost && (
+          <div className="mt-4">
+            <label
+              className="mb-1 block text-xs font-bold uppercase tracking-wide text-[var(--bingo-felt)]"
+              htmlFor="joinKeyInput"
+            >
+              Clave de la mesa
+            </label>
+            <input
+              id="joinKeyInput"
+              type="text"
+              value={joinKey}
+              onInput={(e) => setJoinKey(e.target.value)}
+              placeholder="La que creó el host"
+              className="w-full rounded-xl border-2 border-bingo-felt/15 bg-white/70 px-3 py-2.5 outline-none focus:border-[var(--bingo-felt)]"
+            />
+          </div>
+        )}
 
         {started && (
           <p className="mt-4 rounded-lg border-2 border-dashed border-bingo-felt/25 bg-white/40 px-3 py-2 text-sm text-[var(--bingo-ink)]">

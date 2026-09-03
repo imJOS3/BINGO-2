@@ -78,7 +78,7 @@ export default function WrapperStructureBall({ gameId, roundKey }) {
   return (
     <div className="ball-hopper" aria-label="Bolas cantadas">
       <div className="ball-hopper__bulb">
-        <TubeBall tone="bulb" />
+        <TubeBall />
         <div className="ball-hopper__current">
           <AnimatePresence>
             {latest ? (
@@ -105,7 +105,6 @@ export default function WrapperStructureBall({ gameId, roundKey }) {
       </div>
 
       <div className="ball-hopper__stem">
-        <TubeBall tone="stem" />
         <div className="ball-hopper__stack" ref={stackRef}>
           <AnimatePresence initial={false}>
             {stack.map((ball, index) => (

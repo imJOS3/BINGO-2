@@ -74,9 +74,6 @@ export default function BingoSidebar({
             exit={{ x: "-105%" }}
             transition={{ type: "spring", stiffness: 320, damping: 32 }}
           >
-            {/* Franja ticket */}
-            <div className="pointer-events-none absolute inset-y-0 left-0 w-3 bg-[repeating-linear-gradient(180deg,#f0b429_0_10px,transparent_10px_18px)] opacity-80" />
-
             <div className="relative flex items-start justify-between gap-3 px-5 pb-4 pt-6">
               <div>
                 <p className="text-[0.65rem] font-semibold uppercase tracking-[0.28em] text-[var(--bingo-amber)]">

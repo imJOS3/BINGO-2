@@ -9,6 +9,8 @@ import { ProtectedRoute } from "../utils/ProtectedRoute";
 import GameID from "./routes/game/ID/gameID";
 import Playing from "./routes/playing/playing";
 import Games from "./routes/games/games";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
 import NotFound from "./routes/NotFound";
 
 
@@ -43,6 +45,8 @@ export function App() {
         <Router onChange={handleRouteChange}>
           <Home path="/" />
           <Register path="/login" onLogin={handleLogin} />
+          <Terms path="/terms" />
+          <Privacy path="/privacy" />
           <ProtectedRoute Component={Game} path="/games" />
           <ProtectedRoute Component={Games} path="/game" />
           <ProtectedRoute Component={GameID} path="/game/:id" />

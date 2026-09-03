@@ -166,7 +166,7 @@ export default function Games() {
                 <span className="block text-[var(--bingo-amber)]">Online</span>
               </h1>
               <p className="mt-3 max-w-md text-base text-white/75">
-                Elige una mesa abierta, busca por nombre, código o ID, o abre tu propia partida.
+                Elige una mesa abierta, busca por nombre o código, o abre tu propia partida.
               </p>
             </div>
 
@@ -257,7 +257,7 @@ export default function Games() {
               </div>
               <h2 className="font-bingo text-2xl text-[var(--bingo-felt)]">Buscar mesa</h2>
               <p className="mt-1 text-sm text-bingo-ink/65">
-                Entra con el nombre, el código de 6 caracteres o el ID.
+                Entra con el nombre o el código de 6 caracteres.
               </p>
               <span className="mt-4 inline-flex items-center gap-2 font-bingo text-sm text-[var(--bingo-felt)]">
                 {showSearch ? "Ocultar búsqueda" : "Abrir búsqueda"}

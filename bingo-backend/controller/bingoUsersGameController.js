@@ -5,6 +5,9 @@ import db from "../database/db.js";
 import { getIO } from "../socket.js";
 import { removePlayerFromGame, closeGameIfEmpty } from "../services/playerRoster.js";
 import { presenceMap, onlineCount } from "../services/presence.js";
+import { keysMatch, toClientGame } from "../utils/gamePublic.js";
+
+const sameId = (a, b) => Number(a) === Number(b);
 
 export const joinGame = async (req, res) => {
     const { game_id } = req.params;
@@ -33,8 +36,18 @@ export const joinGame = async (req, res) => {
                     : "Ya estás unido a esta partida",
                 alreadyJoined: true,
                 spectator: existing.is_spectator,
-                game,
+                eliminated: Boolean(existing.eliminated_at),
+                game: toClientGame(game, { viewerId: user_id }),
             });
+        }
+
+        if (!game.is_public && !sameId(game.creator_id, user_id)) {
+            if (!keysMatch(game.join_key, req.body.join_key)) {
+                return res.status(403).json({
+                    code: "BAD_JOIN_KEY",
+                    message: "Clave incorrecta",
+                });
+            }
         }
 
         const { closed } = await closeGameIfEmpty(game);
@@ -63,7 +76,7 @@ export const joinGame = async (req, res) => {
         });
 
         await game.reload();
-        const gamePayload = game.get({ plain: true });
+        const gamePayload = toClientGame(game);
 
         const io = getIO();
         if (io) {
@@ -82,7 +95,7 @@ export const joinGame = async (req, res) => {
                 ? "La ronda ya empezó: estás en cola para la siguiente"
                 : "Unido a la partida con éxito",
             spectator,
-            game,
+            game: toClientGame(game, { viewerId: user_id }),
         });
     } catch (error) {
         if (error.name === "SequelizeUniqueConstraintError") {

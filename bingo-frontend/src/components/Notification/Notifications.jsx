@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'preact/hooks';
-import { io } from 'socket.io-client';
+import { connectSocket } from '../../utils/socket';
 
 const Notifications = ({ isOpen, toggleNotifications }) => {
   const [socket, setSocket] = useState(null);
@@ -13,7 +13,7 @@ const Notifications = ({ isOpen, toggleNotifications }) => {
       console.error('VITE_API_URL no está definida');
       return;
     }
-    const newSocket = io(socketUrl);
+    const newSocket = connectSocket();
 
     setSocket(newSocket);
 

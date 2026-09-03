@@ -23,6 +23,7 @@ export default function CreateGameModal({ onClose }) {
   const [customCells, setCustomCells] = useState(emptyPattern());
   const [gameTime, setGameTime] = useState(3);
   const [isPublic, setIsPublic] = useState(true);
+  const [joinKey, setJoinKey] = useState("");
   const [creatorId, setCreatorId] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState(null);
@@ -51,6 +52,11 @@ export default function CreateGameModal({ onClose }) {
       return;
     }
 
+    if (!isPublic && joinKey.trim().length < 4) {
+      setFormError("Crea una clave de 4 a 20 caracteres para la mesa privada");
+      return;
+    }
+
     const modeId = gameModeMapping[gameMode] || 1;
 
     const newGame = {
@@ -59,6 +65,7 @@ export default function CreateGameModal({ onClose }) {
       game_time: gameTime,
       game_status: "active",
       is_public: isPublic,
+      join_key: isPublic ? undefined : joinKey.trim(),
       creator_id: creatorId,
       win_pattern:
         modeId === 9 ? clonePattern(customCells) : null,
@@ -178,7 +185,7 @@ export default function CreateGameModal({ onClose }) {
                     isPublic ? "text-white/80" : "text-bingo-ink/55"
                   }`}
                 >
-                  Visible en el listado
+                  Visible, entra cualquiera
                 </span>
               </button>
               <button
@@ -196,14 +203,33 @@ export default function CreateGameModal({ onClose }) {
                     !isPublic ? "text-bingo-ink/70" : "text-bingo-ink/55"
                   }`}
                 >
-                  Solo con código
+                  Visible, pide tu clave
                 </span>
               </button>
             </div>
             {!isPublic && (
-              <p className="mt-2 rounded-lg bg-bingo-amber/15 px-3 py-2 text-xs text-bingo-ink/80">
-                Comparte el código de 6 caracteres que se genera al crear la mesa.
-              </p>
+              <div className="mt-3">
+                <label
+                  className="mb-1 block text-xs font-bold uppercase tracking-wide text-[var(--bingo-felt)]"
+                  htmlFor="joinKey"
+                >
+                  Clave de entrada
+                </label>
+                <input
+                  id="joinKey"
+                  type="text"
+                  value={joinKey}
+                  onChange={(e) => setJoinKey(e.target.value)}
+                  minLength={4}
+                  maxLength={20}
+                  placeholder="Ej: bingo2026"
+                  className="w-full rounded-xl border-2 border-bingo-felt/15 bg-white/70 px-3 py-2.5 outline-none focus:border-[var(--bingo-felt)]"
+                  required
+                />
+                <p className="mt-1.5 text-xs text-bingo-ink/65">
+                  Quien vea la mesa necesitará esta clave para entrar.
+                </p>
+              </div>
             )}
           </div>
 

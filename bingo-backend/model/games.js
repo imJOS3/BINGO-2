@@ -58,6 +58,10 @@ const Game = db.define('Game', {
         allowNull: false,
         defaultValue: true,
     },
+    join_key: {
+        type: DataTypes.STRING(20),
+        allowNull: true,
+    },
     win_pattern: {
         type: DataTypes.JSON,
         allowNull: true,

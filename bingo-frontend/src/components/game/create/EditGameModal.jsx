@@ -26,6 +26,7 @@ export default function EditGameModal({ game, onClose }) {
   );
   const [gameTime, setGameTime] = useState(Number(game?.game_time) || 3);
   const [isPublic, setIsPublic] = useState(game?.is_public !== false);
+  const [joinKey, setJoinKey] = useState(game?.join_key || "");
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState(null);
 
@@ -46,6 +47,11 @@ export default function EditGameModal({ game, onClose }) {
       return;
     }
 
+    if (!isPublic && joinKey.trim().length < 4 && !game?.join_key) {
+      setFormError("Crea una clave de 4 a 20 caracteres para la mesa privada");
+      return;
+    }
+
     const modeId = gameModeMapping[gameMode] || 1;
 
     setSubmitting(true);
@@ -55,6 +61,7 @@ export default function EditGameModal({ game, onClose }) {
         game_mode_id: modeId,
         game_time: gameTime,
         is_public: isPublic,
+        join_key: isPublic ? undefined : joinKey.trim() || undefined,
         win_pattern: modeId === 9 ? clonePattern(customCells) : null,
       });
       onClose();
@@ -85,7 +92,7 @@ export default function EditGameModal({ game, onClose }) {
           Configurar mesa
         </h2>
         <p className="relative mb-5 text-sm text-bingo-ink/65">
-          Cambia el nombre, el modo, el tiempo o si la mesa es pública.
+          Cambia el nombre, el modo, el tiempo o la clave de la mesa.
         </p>
 
         <form onSubmit={handleSubmit} className="relative space-y-5 overflow-x-hidden">
@@ -159,7 +166,7 @@ export default function EditGameModal({ game, onClose }) {
                     isPublic ? "text-white/80" : "text-bingo-ink/55"
                   }`}
                 >
-                  Visible en el listado
+                  Visible, entra cualquiera
                 </span>
               </button>
               <button
@@ -177,10 +184,30 @@ export default function EditGameModal({ game, onClose }) {
                     !isPublic ? "text-white/80" : "text-bingo-ink/55"
                   }`}
                 >
-                  Solo con código
+                  Visible, pide tu clave
                 </span>
               </button>
             </div>
+            {!isPublic && (
+              <div className="mt-3">
+                <label
+                  className="mb-1 block text-xs font-bold uppercase tracking-wide text-[var(--bingo-felt)]"
+                  htmlFor="editJoinKey"
+                >
+                  Clave de entrada
+                </label>
+                <input
+                  id="editJoinKey"
+                  type="text"
+                  value={joinKey}
+                  onChange={(e) => setJoinKey(e.target.value)}
+                  minLength={4}
+                  maxLength={20}
+                  placeholder={game?.join_key ? "Deja vacío para no cambiarla" : "Ej: bingo2026"}
+                  className="w-full rounded-xl border-2 border-bingo-felt/15 bg-white/70 px-3 py-2.5 outline-none focus:border-[var(--bingo-felt)]"
+                />
+              </div>
+            )}
           </div>
 
           {formError && (

@@ -1,8 +1,7 @@
-export default function TubeBall({ tone = "bulb" }) {
+export default function TubeBall() {
   return (
-    <div className={`ball-hopper__sheen ball-hopper__sheen--${tone}`} aria-hidden="true">
-      {tone === "bulb" ? <span className="ball-hopper__sheen-top" /> : null}
-      <span className="ball-hopper__sheen-left" />
+    <div className="ball-hopper__sheen" aria-hidden="true">
+      <span className="ball-hopper__sheen-top" />
     </div>
   );
 }

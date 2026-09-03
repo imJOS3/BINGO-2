@@ -1,5 +1,5 @@
 import { useState, useEffect } from "preact/hooks";
-import { io } from "socket.io-client";
+import { connectSocket } from "../../utils/socket";
 import { route } from "preact-router";
 import { motion } from "framer-motion";
 import BingoCardPlaying from "../../components/game/scenery/cardBingo/BIngoCArdPlaying";
@@ -28,6 +28,8 @@ import GamePlayers from "../../components/game/seeGames/InGameData/gamePlayer";
 import CasinoStats from "../../components/game/scenery/stats/CasinoStats";
 import TableToasts from "../../components/game/TableToasts";
 import SpectatorQueue from "../../components/game/scenery/cardBingo/SpectatorQueue";
+import ConsolationRoulette from "../../components/game/scenery/cardBingo/ConsolationRoulette";
+import JoinKeyGate from "../../components/game/searchGame/JoinKeyGate";
 
 export default function Playing({ id }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -35,6 +37,9 @@ export default function Playing({ id }) {
   const [unreadChat, setUnreadChat] = useState(0);
   const [showRestart, setShowRestart] = useState(false);
   const [seatChecked, setSeatChecked] = useState(false);
+  const [needsKey, setNeedsKey] = useState(false);
+  const [rafflePayload, setRafflePayload] = useState(null);
+  const [endedByRaffle, setEndedByRaffle] = useState(false);
   const gameId = id;
   const {
     selectedGame,
@@ -58,6 +63,7 @@ export default function Playing({ id }) {
   const ensureSeat = useUsersGame((s) => s.ensureSeat);
   const spectatorGameId = useUsersGame((s) => s.spectatorGameId);
   const setSpectatorSeat = useUsersGame((s) => s.setSpectatorSeat);
+  const setEliminatedSeat = useUsersGame((s) => s.setEliminatedSeat);
   const inQueue =
     spectatorGameId != null && String(spectatorGameId) === String(gameId);
 
@@ -66,7 +72,7 @@ export default function Playing({ id }) {
       prepareForGame(gameId);
       loadCalledNumbers(gameId);
       clearWinner();
-      fetchGameById(gameId);
+      fetchGameById(gameId, userInfo?.id);
     }
   }, [gameId]);
 
@@ -78,14 +84,18 @@ export default function Playing({ id }) {
       return;
     }
     setSeatChecked(false);
-    void ensureSeat(gameId, userInfo.id).finally(() => setSeatChecked(true));
+    setNeedsKey(false);
+    void ensureSeat(gameId, userInfo.id).then((data) => {
+      if (!data) setNeedsKey(true);
+      setSeatChecked(true);
+    });
   }, [gameId, userInfo?.id]);
 
   useEffect(() => {
     const socketUrl = import.meta.env.VITE_API_URL;
     if (!socketUrl || !gameId) return;
 
-    const socket = io(socketUrl);
+    const socket = connectSocket();
 
     socket.on("gameWon", (payload) => {
       if (String(payload.gameId) !== String(gameId)) return;
@@ -97,9 +107,28 @@ export default function Playing({ id }) {
       if (String(payload.gameId) !== String(gameId)) return;
       if (payload.game) applyRestart(payload.game);
       setShowRestart(false);
+      setRafflePayload(null);
+      setEndedByRaffle(false);
+      setEliminatedSeat(null);
       if (payload.resetNumbers) {
         startNewRound(gameId);
         loadCalledNumbers(gameId);
+      }
+    });
+
+    socket.on("roundRaffle", (payload) => {
+      if (String(payload.gameId) !== String(gameId)) return;
+      if (payload.game) setSelectedGame(payload.game);
+      setRafflePayload(payload);
+    });
+
+    socket.on("playerEliminated", (payload) => {
+      if (String(payload.gameId) !== String(gameId)) return;
+      if (
+        userInfo?.id != null &&
+        String(payload.userId) === String(userInfo.id)
+      ) {
+        setEliminatedSeat(gameId);
       }
     });
 
@@ -126,6 +155,8 @@ export default function Playing({ id }) {
     return () => {
       socket.off("gameWon");
       socket.off("gameRestarted");
+      socket.off("roundRaffle");
+      socket.off("playerEliminated");
       socket.off("numberCalled");
       socket.off("spectatorsPromoted");
       socket.off("gameClosed");
@@ -144,6 +175,7 @@ export default function Playing({ id }) {
 
   const winnerName = winner?.nickname || selectedGame?.winner_nickname;
   const winnerId = winner?.id ?? selectedGame?.winner_id;
+  const showWinnerModal = winnerName && !rafflePayload;
   const iWon =
     userInfo?.id != null &&
     winnerId != null &&
@@ -238,7 +270,7 @@ export default function Playing({ id }) {
 
         <main className="flex min-h-0 min-w-0 flex-1 flex-col gap-2 overflow-hidden">
           <GameHud
-            paused={!!winnerName}
+            paused={!!winnerName || !!rafflePayload || selectedGame?.game_status === "completed"}
             onOpenStats={() => togglePanel("stats")}
           />
 
@@ -348,6 +380,12 @@ export default function Playing({ id }) {
       </div>
 
       <WrapperSetting isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
+      {needsKey && selectedGame?.is_public === false && (
+        <JoinKeyGate
+          game={selectedGame}
+          onJoined={() => setNeedsKey(false)}
+        />
+      )}
       <TableToasts
         gameId={gameId}
         chatOpen={openPanel === "chat"}
@@ -358,7 +396,19 @@ export default function Playing({ id }) {
         }}
       />
 
-      {winnerName && (
+      {rafflePayload && (
+        <ConsolationRoulette
+          payload={rafflePayload}
+          onDone={() => {
+            if (rafflePayload.winner) setWinner(rafflePayload.winner);
+            if (rafflePayload.game) setSelectedGame(rafflePayload.game);
+            setEndedByRaffle(true);
+            setRafflePayload(null);
+          }}
+        />
+      )}
+
+      {showWinnerModal && (
         <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-bingo-felt-deep/80 p-4 backdrop-blur-sm">
           <motion.div
             className="bingo-ticket w-full max-w-md rounded-2xl p-8 text-center shadow-[10px_10px_0_rgba(0,0,0,0.35)]"
@@ -366,13 +416,19 @@ export default function Playing({ id }) {
             animate={{ scale: 1, opacity: 1 }}
           >
             <p className="text-xs font-bold uppercase tracking-[0.25em] text-bingo-felt/55">
-              Partida terminada
+              {endedByRaffle ? "Ruleta de consolación" : "Partida terminada"}
             </p>
             <h2 className="mt-2 font-bingo text-4xl text-[var(--bingo-red)]">
-              {iWon ? "¡Ganaste!" : "¡Bingo!"}
+              {iWon
+                ? endedByRaffle
+                  ? "¡Ganaste el sorteo!"
+                  : "¡Ganaste!"
+                : endedByRaffle
+                  ? "¡Sorteo!"
+                  : "¡Bingo!"}
             </h2>
             <p className="mt-3 text-lg text-[var(--bingo-ink)]">
-              Ganador:{" "}
+              {endedByRaffle ? "Ganador del sorteo: " : "Ganador: "}
               <span className="font-bingo text-[var(--bingo-felt)]">
                 {winnerName}
               </span>

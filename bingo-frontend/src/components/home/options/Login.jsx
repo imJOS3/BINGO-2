@@ -64,6 +64,18 @@ export default function Login({ onBack, onSwitchToRegister }) {
 
       <SocialAuthButtons onError={setLocalError} />
 
+      <p className="text-center text-xs leading-relaxed text-bingo-ink/65">
+        Al continuar aceptas los{" "}
+        <button type="button" onClick={() => route("/terms")} className="underline">
+          Términos
+        </button>{" "}
+        y la{" "}
+        <button type="button" onClick={() => route("/privacy")} className="underline">
+          Privacidad
+        </button>
+        .
+      </p>
+
       <p className="text-center text-sm text-bingo-ink/75">
         ¿No tienes cuenta?{" "}
         <button
