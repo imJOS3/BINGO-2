@@ -71,85 +71,114 @@ export default function GameData() {
     }
   };
 
+  const startControl = isHost ? (
+    selectedGame?.game_status === "completed" ? (
+      <button
+        type="button"
+        className="w-full rounded-xl bg-[var(--bingo-amber)] px-4 py-3 font-bingo text-base text-[var(--bingo-ink)] shadow-[3px_3px_0_#9a7510] transition hover:brightness-105 sm:text-lg"
+        onClick={() => setShowRestart(true)}
+      >
+        Siguiente ronda
+      </button>
+    ) : (
+      <button
+        type="button"
+        className="w-full rounded-xl bg-[var(--bingo-amber)] px-4 py-3 font-bingo text-base text-[var(--bingo-ink)] shadow-[3px_3px_0_#9a7510] transition hover:brightness-105 disabled:opacity-60 sm:text-lg"
+        onClick={handleStartGame}
+        disabled={starting || selectedGame?.game_status === "in_progress"}
+      >
+        {starting ? "Iniciando..." : "¡Empezar partida!"}
+      </button>
+    )
+  ) : (
+    <div className="w-full rounded-xl border border-dashed border-white/30 bg-black/20 px-4 py-2.5 text-center">
+      <p className="font-bingo text-base text-white">Esperando al host</p>
+      <p className="text-xs text-white/65">
+        La partida arranca cuando el anfitrión pulse Empezar.
+      </p>
+    </div>
+  );
+
+  const sideActions = (
+    <>
+      {canEdit && (
+        <button
+          type="button"
+          className="w-full rounded-xl border border-white/25 bg-white/10 px-3 py-2.5 text-left font-semibold text-white transition hover:bg-white/15"
+          onClick={() => setShowEdit(true)}
+        >
+          <span className="block font-bingo text-sm">Configurar mesa</span>
+          <span className="mt-0.5 block text-[0.7rem] text-white/65">
+            Modo, tiempo y nombre
+          </span>
+        </button>
+      )}
+      <button
+        type="button"
+        className="w-full rounded-xl border border-white/25 bg-white/10 px-3 py-2.5 text-left font-semibold text-white transition hover:bg-white/15"
+        onClick={handleShowPlayers}
+      >
+        <span className="block font-bingo text-sm">Jugadores</span>
+        <span className="mt-0.5 block text-[0.7rem] text-white/65">
+          {seatedCount} en la mesa
+        </span>
+      </button>
+      <button
+        type="button"
+        className="w-full rounded-xl bg-[var(--bingo-red)] px-3 py-2.5 font-bingo text-sm text-white shadow-[3px_3px_0_#7a1c1c] transition hover:brightness-110 md:col-span-2"
+        onClick={() => {
+          setLeaveError(null);
+          setShowLeaveConfirm(true);
+        }}
+      >
+        Salir de la mesa
+      </button>
+    </>
+  );
+
   return (
     <div
-      className="mx-auto flex h-full min-h-0 w-full max-w-6xl flex-col px-3 pt-3 sm:px-5"
-      style={{ paddingBottom: "4.5rem" }}
+      className="mx-auto flex w-full max-w-6xl flex-col px-3 pt-3 sm:px-5 md:h-full md:min-h-0"
+      style={{ paddingBottom: "max(5.5rem, calc(4.5rem + env(safe-area-inset-bottom)))" }}
     >
       <motion.div
-        className="mb-2 flex shrink-0 flex-wrap items-center justify-between gap-2"
+        className="mb-2 flex shrink-0 items-center justify-between gap-2"
         initial={{ opacity: 0, y: -12 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <div>
+        <div className="min-w-0">
           <p className="text-[0.65rem] font-bold uppercase tracking-[0.22em] text-[var(--bingo-amber)]">
             Sala de espera
           </p>
-          <h1 className="font-bingo text-2xl leading-none text-white sm:text-3xl">
+          <h1 className="font-bingo text-xl leading-none text-white sm:text-3xl">
             Prepara tu cartón
           </h1>
         </div>
         {isHost && (
-          <span className="rounded-full bg-[var(--bingo-amber)] px-3 py-1 text-xs font-bold uppercase tracking-wide text-[var(--bingo-ink)]">
+          <span className="shrink-0 rounded-full bg-[var(--bingo-amber)] px-2.5 py-1 text-[0.65rem] font-bold uppercase tracking-wide text-[var(--bingo-ink)] sm:px-3 sm:text-xs">
             Eres el host
           </span>
         )}
       </motion.div>
 
-      <div className="grid min-h-0 flex-1 gap-3 md:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] md:items-stretch">
+      <div className="flex flex-col gap-3 md:grid md:min-h-0 md:flex-1 md:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] md:items-stretch">
         <motion.div
-          className="flex min-h-0 flex-col gap-2"
-          initial={{ opacity: 0, x: -16 }}
-          animate={{ opacity: 1, x: 0 }}
+          className="flex flex-col gap-2 md:min-h-0"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05 }}
         >
           <TableGameData />
-
-          <div className="grid shrink-0 grid-cols-2 gap-2">
-            {canEdit && (
-              <button
-                type="button"
-                className="rounded-xl border border-white/25 bg-white/10 px-3 py-2 text-left font-semibold text-white transition hover:bg-white/15"
-                onClick={() => setShowEdit(true)}
-              >
-                <span className="block font-bingo text-sm">Configurar mesa</span>
-                <span className="mt-0.5 block text-[0.7rem] text-white/65">
-                  Modo, tiempo y nombre
-                </span>
-              </button>
-            )}
-            <button
-              type="button"
-              className={`rounded-xl border border-white/25 bg-white/10 px-3 py-2 text-left font-semibold text-white transition hover:bg-white/15 ${
-                canEdit ? "" : "col-span-2"
-              }`}
-              onClick={handleShowPlayers}
-            >
-              <span className="block font-bingo text-sm">Jugadores</span>
-              <span className="mt-0.5 block text-[0.7rem] text-white/65">
-                {seatedCount} en la mesa
-              </span>
-            </button>
-            <button
-              type="button"
-              className="col-span-2 rounded-xl bg-[var(--bingo-red)] px-3 py-2 font-bingo text-sm text-white shadow-[3px_3px_0_#7a1c1c] transition hover:brightness-110"
-              onClick={() => {
-                setLeaveError(null);
-                setShowLeaveConfirm(true);
-              }}
-            >
-              Salir de la mesa
-            </button>
-          </div>
+          <div className="hidden gap-2 md:grid md:grid-cols-2">{sideActions}</div>
         </motion.div>
 
         <motion.div
-          className="flex min-h-0 flex-col items-center gap-2"
-          initial={{ opacity: 0, y: 16 }}
+          className="flex flex-col items-center gap-2 md:min-h-0"
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <div className="min-h-[16rem] w-full flex-1 md:min-h-0">
+          <div className="flex w-full justify-center md:min-h-0 md:flex-1">
             <BingoCard compact />
           </div>
 
@@ -158,34 +187,10 @@ export default function GameData() {
             para cambiar tu cartón.
           </p>
 
-          {isHost ? (
-            selectedGame?.game_status === "completed" ? (
-              <button
-                type="button"
-                className="w-full max-w-md shrink-0 rounded-xl bg-[var(--bingo-amber)] px-5 py-2.5 font-bingo text-lg text-[var(--bingo-ink)] shadow-[3px_3px_0_#9a7510] transition hover:brightness-105"
-                onClick={() => setShowRestart(true)}
-              >
-                Siguiente ronda
-              </button>
-            ) : (
-              <button
-                type="button"
-                className="w-full max-w-md shrink-0 rounded-xl bg-[var(--bingo-amber)] px-5 py-2.5 font-bingo text-lg text-[var(--bingo-ink)] shadow-[3px_3px_0_#9a7510] transition hover:brightness-105 disabled:opacity-60"
-                onClick={handleStartGame}
-                disabled={starting || selectedGame?.game_status === "in_progress"}
-              >
-                {starting ? "Iniciando..." : "¡Empezar partida!"}
-              </button>
-            )
-          ) : (
-            <div className="w-full max-w-md shrink-0 rounded-xl border border-dashed border-white/30 bg-black/20 px-4 py-2.5 text-center">
-              <p className="font-bingo text-base text-white">Esperando al host</p>
-              <p className="text-xs text-white/65">
-                La partida arranca cuando el anfitrión pulse Empezar.
-              </p>
-            </div>
-          )}
+          <div className="w-full max-w-md shrink-0">{startControl}</div>
         </motion.div>
+
+        <div className="flex flex-col gap-2 md:hidden">{sideActions}</div>
       </div>
 
       {showPlayers && <GamePlayers onClose={() => setShowPlayers(false)} />}

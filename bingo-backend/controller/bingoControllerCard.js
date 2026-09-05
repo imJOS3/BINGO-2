@@ -19,9 +19,7 @@ export const createBingoCard = async (req, res) => {
             return res.status(404).json({ message: 'Game not found' });
         }
 
-        if (game.game_status === 'completed') {
-            return res.status(400).json({ message: 'Cannot create a card for a completed game' });
-        }
+        // Entre rondas (`completed`) la mesa sigue abierta: quien entra recibe cartón.
 
         const membership = await UserGames.findOne({ where: { user_id, game_id } });
         if (!membership) {
@@ -30,7 +28,7 @@ export const createBingoCard = async (req, res) => {
 
         if (membership.is_spectator) {
             return res.status(403).json({
-                message: 'Estás en cola: recibes cartón cuando empiece la próxima ronda',
+                message: 'Estás en cola: recibes cartón al terminar esta ronda',
             });
         }
 
@@ -149,7 +147,7 @@ export const getBingoCardById = async (req, res) => {
 const canRegenerateCard = async (card) => {
     const game = await games.findByPk(card.game_id);
     if (!game) return { ok: false, status: 404, message: 'Game not found' };
-    if (game.game_status !== 'active') {
+    if (game.game_status === 'in_progress') {
         return {
             ok: false,
             status: 400,
@@ -281,6 +279,7 @@ export const updateMarkedNumbers = async (req, res) => {
         }
 
         card.marked_numbers = marked_numbers || {};
+        card.changed("marked_numbers", true);
         card.updated_at = new Date();
         await card.save();
 

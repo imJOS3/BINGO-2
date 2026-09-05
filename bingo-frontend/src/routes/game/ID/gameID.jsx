@@ -40,7 +40,10 @@ export default function GameID({ id }) {
     const gid = selectedGame?.id || id;
     if (!gid) return;
     if (String(selectedGame?.id) !== String(id) && selectedGame?.id) return;
-    if (selectedGame?.game_status === "in_progress") {
+    if (
+      selectedGame?.game_status === "in_progress" ||
+      selectedGame?.game_status === "completed"
+    ) {
       route(`/playing/${gid}`);
     }
   }, [id, selectedGame?.id, selectedGame?.game_status]);
@@ -59,7 +62,10 @@ export default function GameID({ id }) {
       const gameId = payload.gameId || payload.game.id;
       if (String(gameId) !== String(id || selectedGame?.id)) return;
       setSelectedGame(payload.game);
-      if (payload.game.game_status === "in_progress") {
+      if (
+        payload.game.game_status === "in_progress" ||
+        payload.game.game_status === "completed"
+      ) {
         route(`/playing/${payload.game.id || gameId}`);
       }
     };
@@ -67,6 +73,8 @@ export default function GameID({ id }) {
     socket.on("gameStarted", enterIfStarted);
     socket.on("gameUpdated", enterIfStarted);
     socket.on("gameRestarted", enterIfStarted);
+    socket.on("gameWon", enterIfStarted);
+    socket.on("roundRaffle", enterIfStarted);
     socket.on("gameClosed", (payload) => {
       const gameId = payload?.gameId || payload?.game?.id;
       if (String(gameId) !== String(id || selectedGame?.id)) return;
@@ -78,6 +86,8 @@ export default function GameID({ id }) {
       socket.off("gameStarted");
       socket.off("gameUpdated");
       socket.off("gameRestarted");
+      socket.off("gameWon");
+      socket.off("roundRaffle");
       socket.off("gameClosed");
     };
   }, [id, selectedGame?.id]);

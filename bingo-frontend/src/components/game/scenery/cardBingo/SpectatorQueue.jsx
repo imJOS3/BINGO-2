@@ -28,7 +28,7 @@ export default function SpectatorQueue({ gameId, roundOver = false }) {
 
         <p className="mt-1 text-xs text-white/65">
           {roundOver
-            ? "Esta ronda terminó. En cuanto el anfitrión abra la siguiente, recibes tu cartón."
+            ? "Esta ronda terminó. En un momento recibes silla y cartón para la siguiente."
             : "Mira las bolas y los cartones de la mesa; jugarás en la próxima ronda."}
         </p>
 

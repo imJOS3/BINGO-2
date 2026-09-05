@@ -6,7 +6,7 @@ import GameMode from "../../scenery/gameData/gameMode";
 const STATUS_LABEL = {
   active: "En espera",
   in_progress: "En juego",
-  completed: "Finalizada",
+  completed: "Entre rondas",
 };
 
 export default function TableGameData() {
@@ -62,7 +62,7 @@ export default function TableGameData() {
 
   return (
     <div className="rounded-2xl border border-bingo-felt/20 bg-[var(--bingo-paper)] p-3 shadow-[4px_4px_0_rgba(6,40,32,0.3)]">
-      <div className="flex items-center gap-3">
+      <div className="flex items-start gap-2 sm:items-center sm:gap-3">
         <div className="min-w-0 flex-1">
           <p className="text-[0.6rem] font-bold uppercase tracking-[0.2em] text-[var(--bingo-felt-light)]">
             Mesa

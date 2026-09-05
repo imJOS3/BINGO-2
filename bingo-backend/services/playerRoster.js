@@ -76,7 +76,7 @@ export async function closeAbandonedGames() {
 
 /**
  * Sienta a quienes esperaban en cola porque llegaron con la ronda empezada.
- * Se llama al abrir una ronda nueva. Devuelve los ids promovidos.
+ * Se llama al terminar una ronda y al abrir la siguiente. Devuelve los ids.
  */
 export async function promoteSpectators(gameId) {
   const waiting = await UserGames.findAll({

@@ -6,6 +6,7 @@ import CalledNumbers from "../model/calledNumber.js";
 import db from "../database/db.js";
 import { getIO } from "../socket.js";
 import { stopBallCaller } from "./ballCaller.js";
+import { promoteSpectators } from "./playerRoster.js";
 import { countValidMarks } from "../utils/bingoCard/winPattern.js";
 
 /** Tramo final en el que cantar un bingo falso deja fuera de la ronda. */
@@ -144,6 +145,7 @@ export const runConsolationRaffle = async (gameId) => {
   }
 
   stopBallCaller(gameId);
+  const promoted = await promoteSpectators(gameId);
 
   const payload = {
     gameId: Number(gameId),
@@ -158,6 +160,7 @@ export const runConsolationRaffle = async (gameId) => {
         }
       : null,
     game: result.game.get({ plain: true }),
+    promoted,
   };
 
   const io = getIO();

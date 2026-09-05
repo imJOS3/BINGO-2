@@ -51,7 +51,8 @@ export const joinGame = async (req, res) => {
         }
 
         const { closed } = await closeGameIfEmpty(game);
-        if (closed || game.game_status === "completed") {
+        await game.reload();
+        if (closed || game.user_count === 0) {
             return res.status(400).json({
                 message: "No se puede unir a esta mesa ahora",
             });
@@ -64,7 +65,7 @@ export const joinGame = async (req, res) => {
             });
         }
 
-        // La ronda ya está corriendo: entra a mirar y juega desde la siguiente.
+        // Solo entra a cola si la ronda va en marcha. Entre rondas se sienta.
         const spectator = game.game_status === "in_progress";
 
         await db.transaction(async (t) => {

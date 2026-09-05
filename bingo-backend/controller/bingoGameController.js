@@ -198,7 +198,7 @@ export const getAllGames = async (req, res) => {
         await sweepIfStale();
         const allGames = await games.findAll({
             where: {
-                game_status: { [Op.in]: ["active", "in_progress"] },
+                game_status: { [Op.in]: ["active", "in_progress", "completed"] },
                 user_count: { [Op.gt]: 0 },
             },
             order: [["created_at", "DESC"]],
@@ -254,7 +254,7 @@ export const searchGames = async (req, res) => {
             where: {
                 [Op.and]: [
                     { [Op.or]: filters },
-                    { game_status: { [Op.in]: ["active", "in_progress"] } },
+                    { game_status: { [Op.in]: ["active", "in_progress", "completed"] } },
                     { user_count: { [Op.gt]: 0 } },
                 ],
             },
@@ -718,6 +718,8 @@ export const claimWin = async (req, res) => {
         if (!result.alreadyFinished) {
             stopBallCaller(result.game.id);
             cancelTimeUp(result.game.id);
+            const promoted = await promoteSpectators(result.game.id);
+            payload.promoted = promoted;
             const io = getIO();
             if (io) {
                 io.emit("gameWon", payload);

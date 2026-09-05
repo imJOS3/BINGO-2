@@ -40,6 +40,7 @@ export default function Playing({ id }) {
   const [needsKey, setNeedsKey] = useState(false);
   const [rafflePayload, setRafflePayload] = useState(null);
   const [endedByRaffle, setEndedByRaffle] = useState(false);
+  const [stayAtTable, setStayAtTable] = useState(false);
   const gameId = id;
   const {
     selectedGame,
@@ -97,10 +98,22 @@ export default function Playing({ id }) {
 
     const socket = connectSocket();
 
+    const seatIfPromoted = (payload) => {
+      if (!userInfo?.id) return;
+      const ids = payload?.promoted || payload?.userIds || [];
+      const mine = ids.some((uid) => String(uid) === String(userInfo.id));
+      if (mine) {
+        setSpectatorSeat(null);
+        void ensureSeat(gameId, userInfo.id);
+      }
+    };
+
     socket.on("gameWon", (payload) => {
       if (String(payload.gameId) !== String(gameId)) return;
       if (payload.winner) setWinner(payload.winner);
       if (payload.game) setSelectedGame(payload.game);
+      setStayAtTable(false);
+      seatIfPromoted(payload);
     });
 
     socket.on("gameRestarted", (payload) => {
@@ -109,6 +122,7 @@ export default function Playing({ id }) {
       setShowRestart(false);
       setRafflePayload(null);
       setEndedByRaffle(false);
+      setStayAtTable(false);
       setEliminatedSeat(null);
       if (payload.resetNumbers) {
         startNewRound(gameId);
@@ -120,6 +134,7 @@ export default function Playing({ id }) {
       if (String(payload.gameId) !== String(gameId)) return;
       if (payload.game) setSelectedGame(payload.game);
       setRafflePayload(payload);
+      seatIfPromoted(payload);
     });
 
     socket.on("playerEliminated", (payload) => {
@@ -144,7 +159,10 @@ export default function Playing({ id }) {
       const mine = (payload.userIds || []).some(
         (uid) => String(uid) === String(userInfo.id)
       );
-      if (mine) setSpectatorSeat(null);
+      if (mine) {
+        setSpectatorSeat(null);
+        void ensureSeat(gameId, userInfo.id);
+      }
     });
 
     socket.on("gameClosed", (payload) => {
@@ -175,7 +193,7 @@ export default function Playing({ id }) {
 
   const winnerName = winner?.nickname || selectedGame?.winner_nickname;
   const winnerId = winner?.id ?? selectedGame?.winner_id;
-  const showWinnerModal = winnerName && !rafflePayload;
+  const showWinnerModal = winnerName && !rafflePayload && !stayAtTable;
   const iWon =
     userInfo?.id != null &&
     winnerId != null &&
@@ -207,7 +225,7 @@ export default function Playing({ id }) {
         <div className="absolute bottom-16 right-8 h-56 w-56 rounded-full bg-bingo-red/20 blur-3xl" />
       </div>
 
-      <div className="relative z-10 flex min-h-0 flex-1 gap-2 p-2 pb-[4.25rem] sm:gap-3 sm:p-3 lg:pb-3">
+      <div className="relative z-10 flex min-h-0 flex-1 gap-1.5 p-1.5 pb-[4.25rem] sm:gap-3 sm:p-3 lg:pb-3">
         <aside className="hidden min-h-0 w-[11.25rem] shrink-0 flex-col gap-2 overflow-y-auto no-scrollbar lg:flex">
           <div className="rounded-2xl border border-white/15 bg-black/30 p-2.5">
             <GameMode
@@ -312,7 +330,7 @@ export default function Playing({ id }) {
           )}
         </SideDrawer>
 
-        <aside className="h-full w-[6.5rem] shrink-0 lg:w-[8rem]">
+        <aside className="h-full w-[5rem] shrink-0 sm:w-[6.5rem] lg:w-[8rem]">
           <WrapperStructureBall
             gameId={gameId}
             roundKey={selectedGame?.started_at}
@@ -453,28 +471,37 @@ export default function Playing({ id }) {
               </div>
             </div>
 
+            <p className="mt-4 text-sm text-bingo-ink/60">
+              La mesa sigue abierta: puede entrar gente y quienes estaban en cola
+              ya tienen silla.
+            </p>
             <button
               type="button"
-              className="mt-6 rounded-xl bg-[var(--bingo-red)] px-6 py-3 font-bingo text-sm text-white shadow-[3px_3px_0_#7a1c1c] transition hover:brightness-110"
-              onClick={() => route("/game")}
+              className="mt-5 w-full rounded-xl bg-[var(--bingo-felt)] px-6 py-3 font-bingo text-sm text-white shadow-[3px_3px_0_#062820] transition hover:brightness-110"
+              onClick={() => setStayAtTable(true)}
             >
-              Volver a partidas
+              Seguir en la mesa
             </button>
             {isHost ? (
               <button
                 type="button"
-                className="mt-3 w-full rounded-xl bg-[var(--bingo-felt)] px-6 py-3 font-bingo text-sm text-white shadow-[3px_3px_0_#062820] transition hover:brightness-110"
+                className="mt-3 w-full rounded-xl bg-[var(--bingo-amber)] px-6 py-3 font-bingo text-sm text-[var(--bingo-ink)] shadow-[3px_3px_0_#9a7510] transition hover:brightness-110"
                 onClick={() => setShowRestart(true)}
               >
                 Siguiente ronda / otra figura
               </button>
             ) : (
-              <p className="mt-4 text-sm text-bingo-ink/60">
-                {inQueue
-                  ? "En la próxima ronda entras a jugar con cartón. Espera al anfitrión."
-                  : "Esperando a que el anfitrión elija la siguiente figura."}
+              <p className="mt-3 text-sm text-bingo-ink/60">
+                Esperando a que el anfitrión abra la siguiente ronda.
               </p>
             )}
+            <button
+              type="button"
+              className="mt-3 w-full rounded-xl border-2 border-bingo-felt/25 bg-transparent px-6 py-2.5 font-semibold text-[var(--bingo-felt)] transition hover:bg-white/40"
+              onClick={() => route("/game")}
+            >
+              Volver a partidas
+            </button>
           </motion.div>
         </div>
       )}

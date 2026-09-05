@@ -52,43 +52,39 @@ export default function BingoCard({ compact = false }) {
     }
   };
 
-  const gap = compact ? "gap-1" : "gap-1.5 sm:gap-2";
-  const cellBase = compact
-    ? "flex min-h-0 items-center justify-center rounded-md text-sm font-bold"
-    : "flex aspect-square items-center justify-center rounded-lg text-sm font-bold sm:text-lg";
-
   return (
     <div
-      className={`relative mx-auto w-full max-w-md ${
-        compact ? "flex h-full min-h-0 flex-col" : ""
+      className={`relative mx-auto w-full ${
+        compact
+          ? "max-w-[16.5rem] sm:max-w-[18rem] md:h-full md:min-h-0 md:max-w-md"
+          : "max-w-md"
       }`}
     >
       <div
-        className={`rounded-2xl bg-[var(--bingo-felt-light)] shadow-[6px_6px_0_rgba(6,40,32,0.35)] ${
-          compact ? "flex min-h-0 flex-1 flex-col p-2" : "p-3 sm:p-4"
+        className={`rounded-2xl bg-[var(--bingo-felt-light)] p-1.5 shadow-[6px_6px_0_rgba(6,40,32,0.35)] sm:p-3 ${
+          compact
+            ? "aspect-[5/6] md:aspect-auto md:flex md:h-full md:min-h-0 md:flex-col"
+            : "aspect-[5/6]"
         }`}
       >
-        <div className={`grid grid-cols-5 ${gap} ${compact ? "h-[16%] shrink-0" : "mb-2"}`}>
-          {LETTERS.map((letter) => (
-            <div
-              key={letter}
-              className={`${cellBase} font-bingo text-white ${HEADER[letter]}`}
-            >
-              {letter}
-            </div>
-          ))}
-        </div>
-
         {loading && !selectedCard ? (
-          <p className="flex flex-1 items-center justify-center py-6 text-center text-sm font-semibold text-white/80">
+          <p className="flex h-full items-center justify-center text-center text-sm font-semibold text-white/80">
             Preparando cartón...
           </p>
         ) : selectedCard ? (
           <div
-            className={`grid grid-cols-5 grid-rows-5 ${gap} ${
-              compact ? "min-h-0 flex-1" : ""
+            className={`grid h-full min-h-0 grid-cols-5 grid-rows-6 gap-0.5 sm:gap-1.5 ${
+              compact ? "md:flex-1" : ""
             }`}
           >
+            {LETTERS.map((letter) => (
+              <div
+                key={letter}
+                className={`flex min-h-0 items-center justify-center rounded-md font-bingo text-sm text-white sm:rounded-lg sm:text-xl ${HEADER[letter]}`}
+              >
+                {letter}
+              </div>
+            ))}
             {Array.from({ length: 5 }).flatMap((_, rowIndex) =>
               LETTERS.map((letter) => {
                 const numbers = selectedCard.numbers[letter] || [];
@@ -96,10 +92,10 @@ export default function BingoCard({ compact = false }) {
                 return (
                   <div
                     key={`${letter}-${rowIndex}`}
-                    className={`${cellBase} bg-[#1a2744] text-white`}
+                    className="flex min-h-0 items-center justify-center rounded-md bg-[#1a2744] text-sm font-bold text-white sm:rounded-lg sm:text-lg"
                   >
                     {isFree ? (
-                      <span className="font-bingo text-[0.55rem] text-[var(--bingo-amber)] sm:text-xs">
+                      <span className="font-bingo text-[0.6rem] text-[var(--bingo-amber)] sm:text-xs">
                         FREE
                       </span>
                     ) : (
@@ -111,7 +107,7 @@ export default function BingoCard({ compact = false }) {
             )}
           </div>
         ) : (
-          <p className="flex flex-1 items-center justify-center py-6 text-center text-sm text-white/80">
+          <p className="flex h-full items-center justify-center text-center text-sm text-white/80">
             No hay cartón todavía.
           </p>
         )}
@@ -121,11 +117,7 @@ export default function BingoCard({ compact = false }) {
         type="button"
         onClick={handleUpdateCard}
         disabled={reshuffling || !selectedCard}
-        className={`absolute flex items-center justify-center rounded-xl bg-[var(--bingo-red)] font-bingo text-white shadow-[3px_3px_0_#7a1c1c] transition hover:brightness-110 disabled:opacity-50 ${
-          compact
-            ? "-bottom-2 -right-1 h-10 w-10 text-xl"
-            : "-bottom-3 -right-2 h-12 w-12 text-2xl"
-        }`}
+        className="absolute bottom-1.5 right-1.5 z-10 flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--bingo-red)] font-bingo text-lg text-white shadow-[3px_3px_0_#7a1c1c] transition hover:brightness-110 disabled:opacity-50 sm:bottom-2 sm:right-2 sm:h-11 sm:w-11 sm:text-xl"
         aria-label="Cambiar cartón"
         title="Nuevo cartón"
       >

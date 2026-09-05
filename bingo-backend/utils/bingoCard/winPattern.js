@@ -65,17 +65,42 @@ export const hasBingo = (numbers, calledSet, cells) => {
   });
 };
 
+const asObject = (value) => {
+  if (!value) return null;
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      return parsed && typeof parsed === "object" ? parsed : null;
+    } catch {
+      return null;
+    }
+  }
+  return typeof value === "object" ? value : null;
+};
+
 /** Fichas que el jugador puso sobre números realmente cantados. */
 export const countValidMarks = (numbers, calledSet, marked) => {
-  if (!numbers || !marked || typeof marked !== "object") return 0;
+  const marks = asObject(marked);
+  if (!marks || Array.isArray(marks)) return 0;
 
   let total = 0;
+  for (const [key, on] of Object.entries(marks)) {
+    if (!on || key === "__free") continue;
+    const match = /^[BINGO]-(\d+)$/.exec(key);
+    if (!match) continue;
+    if (calledSet.has(Number(match[1]))) total += 1;
+  }
+
+  if (total > 0) return total;
+
+  const card = asObject(numbers);
+  if (!card) return 0;
   for (const letter of LETTERS) {
     for (const row of ROWS) {
       if (isFree(letter, row)) continue;
-      const number = numberAt(numbers, letter, row);
+      const number = numberAt(card, letter, row);
       if (number == null) continue;
-      if (marked[`${letter}-${number}`] && calledSet.has(number)) total += 1;
+      if (marks[`${letter}-${number}`] && calledSet.has(number)) total += 1;
     }
   }
   return total;

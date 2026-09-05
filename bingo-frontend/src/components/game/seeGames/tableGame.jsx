@@ -18,9 +18,9 @@ const STATUS = {
     stripe: "#f0b429",
   },
   completed: {
-    label: "Finalizada",
-    className: "bg-[var(--bingo-red)] text-white",
-    stripe: "#e23d3d",
+    label: "Entre rondas",
+    className: "bg-[#1d6fb8] text-white",
+    stripe: "#1d6fb8",
   },
 };
 

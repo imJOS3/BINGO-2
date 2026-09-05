@@ -49,26 +49,26 @@ export default function Chronometer({ paused = false }) {
 
   return (
     <div
-      className={`flex shrink-0 items-center gap-2.5 whitespace-nowrap sm:gap-3 ${
+      className={`flex min-w-0 shrink-0 flex-col items-stretch gap-1 sm:flex-row sm:items-center sm:gap-3 ${
         urgent ? "animate-pulse" : ""
       }`}
     >
       <span
-        className={`text-sm font-bold uppercase tracking-[0.16em] sm:text-base ${
+        className={`text-[0.6rem] font-bold uppercase tracking-[0.14em] sm:text-base ${
           lastCall ? "text-[var(--bingo-red)]" : "text-[var(--bingo-amber)]"
         }`}
       >
         {lastCall ? "Bingo o nada" : "Termina en"}
       </span>
-      <div className="relative rounded-xl border-2 border-black/70 bg-gray-900 p-1 shadow-[0_3px_8px_rgba(0,0,0,0.45)]">
-        <div className="relative flex items-center justify-center overflow-hidden rounded-lg bg-black px-3.5 py-1 sm:px-4 sm:py-1.5">
+      <div className="relative min-w-0 rounded-xl border-2 border-black/70 bg-gray-900 p-1 shadow-[0_3px_8px_rgba(0,0,0,0.45)]">
+        <div className="relative flex items-center justify-center overflow-hidden rounded-lg bg-black px-2 py-0.5 sm:px-4 sm:py-1.5">
           <span
             aria-hidden="true"
-            className="clock-container absolute inset-0 flex items-center justify-center font-digital text-3xl text-red-500 opacity-10 sm:text-4xl"
+            className="clock-container absolute inset-0 flex items-center justify-center font-digital text-2xl text-red-500 opacity-10 sm:text-4xl"
           >
             88:88
           </span>
-          <span className="clock-container digit relative z-10 font-digital text-3xl leading-none sm:text-4xl">
+          <span className="clock-container digit relative z-10 font-digital text-2xl leading-none sm:text-4xl">
             {formatTime(seconds)}
           </span>
         </div>

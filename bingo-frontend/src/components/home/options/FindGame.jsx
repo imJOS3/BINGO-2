@@ -47,10 +47,10 @@ export default function FindGame({ onBack }) {
       if (userInfo?.id) {
         await joinGame(game.id, userInfo.id, joinKey.trim());
       }
-      if (game.game_status === "in_progress") {
-        route(`/playing/${game.id}`);
-      } else {
+      if (game.game_status === "active") {
         route(`/game/${game.id}`);
+      } else {
+        route(`/playing/${game.id}`);
       }
     } catch (err) {
       setError(err.message || "No se pudo buscar la mesa");

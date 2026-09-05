@@ -10,7 +10,7 @@ import { backdropClose } from "../../../utils/modal";
 const STATUS_LABEL = {
   active: "Abierta",
   in_progress: "En juego",
-  completed: "Finalizada",
+  completed: "Entre rondas",
 };
 
 export default function OneGame({ game, onClose }) {
@@ -34,10 +34,6 @@ export default function OneGame({ game, onClose }) {
     }
     // El resto de comprobaciones las hace el servidor, que es quien sabe
     // cuánta gente sigue conectada en la mesa.
-    if (game.game_status === "completed") {
-      setJoinError("Esta mesa ya no está disponible.");
-      return;
-    }
     if (isPrivate && !isHost && !joinKey.trim()) {
       setJoinError("Escribe la clave de esta mesa privada");
       return;
@@ -48,10 +44,10 @@ export default function OneGame({ game, onClose }) {
       const joined = await joinGame(game.id, userInfo.id, joinKey.trim());
       const table = joined?.game || game;
       setSelectedGame(table);
-      if (table.game_status === "in_progress") {
-        route(`/playing/${table.id}`);
-      } else {
+      if (table.game_status === "active") {
         route(`/game/${table.id}`);
+      } else {
+        route(`/playing/${table.id}`);
       }
     } catch (error) {
       console.log(error);
@@ -61,6 +57,7 @@ export default function OneGame({ game, onClose }) {
   };
 
   const started = game.game_status === "in_progress";
+  const betweenRounds = game.game_status === "completed";
   const joinLabel = started ? "Ver la partida" : "Unirse a la mesa";
 
   return (
@@ -142,6 +139,12 @@ export default function OneGame({ game, onClose }) {
           <p className="mt-4 rounded-lg border-2 border-dashed border-bingo-felt/25 bg-white/40 px-3 py-2 text-sm text-[var(--bingo-ink)]">
             La ronda ya empezó: entras a mirar y quedas en cola para jugar la
             siguiente.
+          </p>
+        )}
+        {betweenRounds && (
+          <p className="mt-4 rounded-lg border-2 border-dashed border-bingo-felt/25 bg-white/40 px-3 py-2 text-sm text-[var(--bingo-ink)]">
+            La ronda terminó: entras a la mesa y juegas cuando el anfitrión abra
+            la siguiente.
           </p>
         )}
 
